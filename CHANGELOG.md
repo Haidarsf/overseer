@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-25
+
 ### Added
 - Answer permission prompts from Overseer: allow once, always allow (this project or all projects, with "Remove rule" to undo) or deny with a note for Claude. Works from the overview, the "waiting for you" bell, the mini window and the keyboard (A / D). Uses an optional synchronous PermissionRequest hook (`Overseer permission`) that only waits while Overseer is open and falls back to the terminal.
 - Command palette (Ctrl+K), menu bar, keyboard shortcuts, and a new-session dialog that starts from your own defaults.
