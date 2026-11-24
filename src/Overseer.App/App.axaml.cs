@@ -22,6 +22,14 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        // log and carry on instead of closing: a monitor that crashes on one odd file is worse than one that skips it
+        Avalonia.Threading.Dispatcher.UIThread.UnhandledException += (_, e) =>
+        {
+            ErrorLog.Write(e.Exception, "ui");
+            e.Handled = true;
+            vm?.ReportError();
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => { if (e.ExceptionObject is Exception ex) ErrorLog.Write(ex, "fatal"); };
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             vm = new MainViewModel();

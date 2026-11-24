@@ -55,3 +55,28 @@ public static class Paths
         return parts.Length > 2 ? parts[0] + Path.DirectorySeparatorChar + "…" + Path.DirectorySeparatorChar + parts[^1] : p[..(max - 1)] + "…";
     }
 }
+
+/// <summary>
+/// Errors Overseer recovered from, for bug reports: ~/.overseer/errors.log (kept under 1 MB).
+/// Holds exception messages and stack traces only.
+/// </summary>
+public static class ErrorLog
+{
+    static readonly object Gate = new();
+    public static string File => Path.Combine(Paths.OverseerDir, "errors.log");
+
+    public static void Write(Exception ex, string where = "")
+    {
+        try
+        {
+            lock (Gate)
+            {
+                Directory.CreateDirectory(Paths.OverseerDir);
+                var f = new FileInfo(File);
+                if (f.Exists && f.Length > 1_000_000) f.Delete();
+                System.IO.File.AppendAllText(File, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} Overseer {Updater.CurrentText} {where}\n{ex}\n\n");
+            }
+        }
+        catch { /* logging must never throw */ }
+    }
+}

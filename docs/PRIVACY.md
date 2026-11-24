@@ -25,6 +25,7 @@ It **never** reads `~/.claude/.credentials.json`, keychains, API keys or tokens.
 | `~/.overseer/events/*.jsonl` | Only if you turn on **Live events**: one line per hook event. Large tool outputs are dropped and long inputs are cut to 400 characters. Files are trimmed when they pass 2 MB. |
 | `~/.overseer/statusline/*.json` | Only if you turn on the **Status line**: the latest status JSON per session. |
 | `~/.overseer/pending`, `answers`, `app.alive` | Only if you turn on **Answer permission prompts here**: each waiting request (tool name and input, as Claude Code sends it), your answer, and a heartbeat so the hook knows the app is open. Files are removed once answered or timed out. |
+| `~/.overseer/errors.log` | Only if something goes wrong: the error message and stack trace (which can include a file path), so you can attach it to a bug report. Kept under 1 MB. Nothing is sent. |
 | `~/.overseer/config.json`, `presets.json`, `prices.json` | Overseer's own settings |
 | `~/.overseer/trash/` | Agents and commands you delete |
 | `~/.claude/settings.json` | Only when you change something in Overseer. A backup is kept as `settings.json.overseer-backup`. |

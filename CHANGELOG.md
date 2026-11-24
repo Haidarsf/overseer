@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - Check for updates in Settings → Updates (and Help → Check for updates). Installed Windows copies can download the new installer, verify its SHA-256 checksum and install it quietly, then restart; other copies open the download page. An optional daily check at startup is off by default.
 - The Windows installer accepts `/RELAUNCH` to start Overseer again after a quiet install.
 
+### Fixed
+- Overseer 0.3.0 closed right after starting when two session files shared one session id (which resuming or copying a session can cause). The usage dial and reports now use the most recent of them.
+- Errors while showing a page no longer close the app: they're written to `~/.overseer/errors.log` and shown as a message with an "Open log" button.
+
 ## [0.3.0] - 2026-11-25
 
 ### Added

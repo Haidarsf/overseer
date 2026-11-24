@@ -89,7 +89,7 @@ public sealed partial class OverviewViewModel : ObservableObject
             var s = all.FirstOrDefault(x => x.Id == id);
             return s is { IsSubagent: true, ParentId: { } pid } ? pid : id;
         }
-        var top = main.Store.TopLevel().ToDictionary(s => s.Id);
+        var top = main.Store.TopLevelById();
         var groups = usage.GroupBy(u => Parent(u.SessionId)).Select(g => (Id: g.Key, Tokens: g.Sum(u => u.Billable))).Where(g => g.Tokens > 0).ToList();
         if (main.HideDone) groups = groups.Where(g => top.TryGetValue(g.Id, out var s) && !Res.IsDone(s.State)).ToList();
         var total = Math.Max(1, groups.Sum(g => g.Tokens));
@@ -176,7 +176,7 @@ public sealed partial class ReportsViewModel : ObservableObject
         var from = days == 0 ? DateTime.MinValue : DateTime.Now.Date.AddDays(-days + 1);
         var by = Group.Value switch { "project" => ReportGroup.Project, "model" => ReportGroup.Model, "session" => ReportGroup.Session, _ => ReportGroup.Day };
         KeyHeader = Group.Label.Replace("By ", "").ToUpperInvariant();
-        var names = main.Store.TopLevel().ToDictionary(s => s.Id, s => s.Title);
+        var names = main.Store.TopLevelById().ToDictionary(p => p.Key, p => p.Value.Title);
         rows = Reports.Build(main.Store.AllUsage(), from, DateTime.Now.AddMinutes(1), by, main.Prices, id => names.GetValueOrDefault(id) ?? id);
         var mx = Math.Max(1, rows.Count == 0 ? 1 : rows.Max(r => r.Billable));
         Items = rows.Select(r => new ReportRowVM(

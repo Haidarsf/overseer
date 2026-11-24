@@ -277,6 +277,26 @@ public sealed partial class MainViewModel : ObservableObject, IOverseerHost, IDi
     // ---------- refresh ----------
     public void Refresh()
     {
+        try { RefreshCore(); }
+        catch (Exception ex)
+        {
+            // one odd session file must not take the whole window down
+            ErrorLog.Write(ex, "refresh");
+            ReportError();
+        }
+    }
+
+    DateTime lastErrorToast;
+    /// <summary>Tells the user (at most once a minute) that something failed and where the details are.</summary>
+    public void ReportError()
+    {
+        if (DateTime.Now - lastErrorToast < TimeSpan.FromMinutes(1)) return;
+        lastErrorToast = DateTime.Now;
+        Toast("Something went wrong showing part of Overseer. Details are in ~/.overseer/errors.log.", false, () => ProcessControl.Open(ErrorLog.File), "Open log");
+    }
+
+    void RefreshCore()
+    {
         var top = Store.TopLevel();
         var pending = SyncPending(top);
         Sync(Sessions, top.Take(80).ToList(), pending);

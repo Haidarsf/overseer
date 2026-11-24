@@ -42,6 +42,20 @@ public sealed class SessionStore : IDisposable
                 .OrderByDescending(s => s.IsLive).ThenByDescending(s => s.Last).ToList();
     }
 
+    /// <summary>Top-level sessions by id. See <see cref="ById"/>.</summary>
+    public Dictionary<string, Session> TopLevelById() => ById(TopLevel());
+
+    /// <summary>
+    /// Sessions keyed by session id. Ids aren't unique across files: resuming or copying a session
+    /// can leave two transcripts with the same id. The first one wins, so pass them most relevant first.
+    /// </summary>
+    public static Dictionary<string, Session> ById(IEnumerable<Session> ordered)
+    {
+        var d = new Dictionary<string, Session>(StringComparer.Ordinal);
+        foreach (var s in ordered) d.TryAdd(s.Id, s);
+        return d;
+    }
+
     public List<Session> SubagentsOf(string id)
     {
         lock (gate) return sessions.Values.Where(s => s.IsSubagent && s.ParentId == id).OrderBy(s => s.First).ToList();
