@@ -343,9 +343,19 @@ public static class Redactor
     public static string Text(string? s)
     {
         if (!Enabled || string.IsNullOrEmpty(s)) return s ?? "";
-        s = WinPath.Replace(s, m => "…\\" + Path.GetFileName(m.Value.TrimEnd('\\')));
-        s = UnixPath.Replace(s, m => "…/" + Path.GetFileName(m.Value.TrimEnd('/')));
+        s = WinPath.Replace(s, m => "…\\" + LastSegment(m.Value));
+        s = UnixPath.Replace(s, m => "…/" + LastSegment(m.Value));
         return Email.Replace(s, "•••@•••");
+    }
+
+    // Path.GetFileName only splits on the current OS separator, so split on both
+    static readonly char[] Separators = { '/', (char)92 };
+
+    static string LastSegment(string p)
+    {
+        var t = p.TrimEnd(Separators);
+        var i = t.LastIndexOfAny(Separators);
+        return i >= 0 ? t[(i + 1)..] : t;
     }
 
     /// <summary>Your own prompts are hidden entirely.</summary>
