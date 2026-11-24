@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-25
+
 ### Added
 - Check for updates in Settings → Updates (and Help → Check for updates). Installed Windows copies can download the new installer, verify its SHA-256 checksum and install it quietly, then restart; other copies open the download page. An optional daily check at startup is off by default.
 - The Windows installer accepts `/RELAUNCH` to start Overseer again after a quiet install.
