@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Overseer.App.ViewModels"
+        x:Class="Overseer.App.Views.MiniWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Overseer · live"
+        Icon="/Assets/overseer.ico"
+        Width="340" SizeToContent="Height" MaxHeight="600" CanResize="False" Topmost="True"
+        Background="{DynamicResource BgSide}">
+  <StackPanel Margin="12">
+    <DockPanel Margin="4,0,4,8">
+      <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Fill="{Binding StatusBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
+      <TextBlock Text="{Binding StatusText}" Classes="muted" />
+    </DockPanel>
+    <TextBlock Text="No live sessions." Classes="faint" Margin="4" IsVisible="{Binding !LiveSessions.Count}" />
+    <ItemsControl ItemsSource="{Binding LiveSessions}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:SessionItemVM">
+          <Border Background="{DynamicResource BgCard}" CornerRadius="10" Padding="10,8" Margin="0,0,0,6" ToolTip.Tip="{Binding Tooltip}">
+            <Grid ColumnDefinitions="18,*,Auto">
+              <Ellipse Width="9" Height="9" Fill="{Binding StateBrush}" Classes.pulse="{Binding IsWorking}" VerticalAlignment="Center" />
+              <StackPanel Grid.Column="1">
+                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12.5" Classes="trim" />
+                <TextBlock Text="{Binding Subtitle}" Classes="faint trim" FontSize="11" />
+              </StackPanel>
+              <TextBlock Grid.Column="2" Text="{Binding StateText}" Foreground="{Binding StateBrush}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="8,0,0,0" />
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </StackPanel>
+</Window>

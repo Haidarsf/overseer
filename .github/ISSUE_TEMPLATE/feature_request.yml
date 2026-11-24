@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest an idea
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the problem or the moment this would help with.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like Overseer to do?
+  - type: textarea
+    id: docs
+    attributes:
+      label: Relevant Claude Code docs
+      description: If this changes Claude Code settings, link the documented setting or CLI command it would use.

@@ -1,0 +1,26 @@
+{
+  "version": "VERSION",
+  "description": "See and steer your Claude Code sessions (independent desktop companion).",
+  "homepage": "https://github.com/Haidarsf/overseer",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/Haidarsf/overseer/releases/download/vVERSION/overseer-win-x64.zip",
+      "hash": "SHA256_WIN_X64"
+    },
+    "arm64": {
+      "url": "https://github.com/Haidarsf/overseer/releases/download/vVERSION/overseer-win-arm64.zip",
+      "hash": "SHA256_WIN_ARM64"
+    }
+  },
+  "bin": [["Overseer.exe", "overseer"]],
+  "shortcuts": [["Overseer.exe", "Overseer"]],
+  "checkver": "github",
+  "autoupdate": {
+    "architecture": {
+      "64bit": { "url": "https://github.com/Haidarsf/overseer/releases/download/v$version/overseer-win-x64.zip" },
+      "arm64": { "url": "https://github.com/Haidarsf/overseer/releases/download/v$version/overseer-win-arm64.zip" }
+    },
+    "hash": { "url": "$url.sha256" }
+  }
+}

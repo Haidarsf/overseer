@@ -1,0 +1,16 @@
+PackageIdentifier: Haidarsf.Overseer
+PackageVersion: VERSION
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: Overseer.exe
+    PortableCommandAlias: overseer
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/Haidarsf/overseer/releases/download/vVERSION/overseer-win-x64.zip
+    InstallerSha256: SHA256_WIN_X64
+  - Architecture: arm64
+    InstallerUrl: https://github.com/Haidarsf/overseer/releases/download/vVERSION/overseer-win-arm64.zip
+    InstallerSha256: SHA256_WIN_ARM64
+ManifestType: installer
+ManifestVersion: 1.6.0

@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Overseer.App.ViewModels"
+             x:Class="Overseer.App.Views.ReportsView"
+             x:DataType="vm:ReportsViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="30,24,30,30">
+      <TextBlock Text="Reports" Classes="h1" />
+      <TextBlock Text="Cost is the API-equivalent price from your editable price table. Subscription plans aren't billed per token." Classes="muted wrap" Margin="0,6,0,16" />
+      <WrapPanel>
+        <ListBox Classes="segmented" ItemsSource="{Binding Ranges}" SelectedItem="{Binding Range}" Margin="0,0,12,8" AutomationProperties.Name="Time range" />
+        <ListBox Classes="segmented" ItemsSource="{Binding Groups}" SelectedItem="{Binding Group}" Margin="0,0,12,8" AutomationProperties.Name="Group by" />
+        <Button Command="{Binding ExportCsvCommand}"><StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.Download}" Width="12" Height="12" /><TextBlock Text="Export CSV" /></StackPanel></Button>
+        <Button Command="{Binding EditPricesCommand}" Content="Edit prices" />
+        <Button Command="{Binding ReloadPricesCommand}" Content="Reload prices" />
+      </WrapPanel>
+
+      <UniformGrid Columns="3" Margin="-7,6,-7,0">
+        <Border Classes="card"><StackPanel><TextBlock Text="Tokens" Classes="title" /><TextBlock Text="{Binding TotalTokens}" Classes="big" Margin="0,8,0,0" /><TextBlock Text="excl. cache reads" Classes="muted" /></StackPanel></Border>
+        <Border Classes="card"><StackPanel><TextBlock Text="Model calls" Classes="title" /><TextBlock Text="{Binding TotalCalls}" Classes="big" Margin="0,8,0,0" /></StackPanel></Border>
+        <Border Classes="card"><StackPanel><TextBlock Text="API-equivalent cost" Classes="title" /><TextBlock Text="{Binding TotalCost}" Classes="big" Margin="0,8,0,0" Foreground="{DynamicResource Accent2}" /></StackPanel></Border>
+      </UniformGrid>
+
+      <Border Classes="card" Margin="0,7">
+        <StackPanel>
+          <Grid ColumnDefinitions="*,90,100,100,110,90" Margin="0,0,0,10">
+            <TextBlock Text="{Binding KeyHeader}" Classes="label" Margin="0" />
+            <TextBlock Grid.Column="1" Text="CALLS" Classes="label" Margin="0" HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="2" Text="TOKENS" Classes="label" Margin="0" HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="3" Text="OUTPUT" Classes="label" Margin="0" HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="4" Text="CACHE READS" Classes="label" Margin="0" HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="5" Text="COST" Classes="label" Margin="0" HorizontalAlignment="Right" />
+          </Grid>
+          <ItemsControl ItemsSource="{Binding Items}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ReportRowVM">
+                <StackPanel Margin="0,0,0,10">
+                  <Grid ColumnDefinitions="*,90,100,100,110,90">
+                    <TextBlock Text="{Binding Key}" FontSize="12.5" Classes="trim" ToolTip.Tip="{Binding Key}" />
+                    <TextBlock Grid.Column="1" Text="{Binding Calls}" FontSize="12.5" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="2" Text="{Binding Billable}" FontSize="12.5" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="3" Text="{Binding Output}" FontSize="12.5" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="4" Text="{Binding CacheRead}" FontSize="12.5" HorizontalAlignment="Right" Foreground="{DynamicResource Muted}" />
+                    <TextBlock Grid.Column="5" Text="{Binding Cost}" FontSize="12.5" HorizontalAlignment="Right" Foreground="{DynamicResource Accent2}" />
+                  </Grid>
+                  <ProgressBar Classes="bar" Height="4" MinHeight="4" Value="{Binding Fraction}" Foreground="{Binding Brush}" Margin="0,5,0,0" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,71 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="BgApp" Color="#0F1117" />
+      <SolidColorBrush x:Key="BgSide" Color="#13151F" />
+      <SolidColorBrush x:Key="BgCard" Color="#191C28" />
+      <SolidColorBrush x:Key="BgCard2" Color="#161823" />
+      <SolidColorBrush x:Key="BgHover" Color="#232741" />
+      <SolidColorBrush x:Key="BgInput" Color="#11131C" />
+      <SolidColorBrush x:Key="Line" Color="#2A2E44" />
+      <SolidColorBrush x:Key="LineSoft" Color="#1F2235" />
+      <SolidColorBrush x:Key="Fg" Color="#ECEEF6" />
+      <SolidColorBrush x:Key="Fg2" Color="#C3C7D9" />
+      <SolidColorBrush x:Key="Muted" Color="#8B90A7" />
+      <SolidColorBrush x:Key="Faint" Color="#5D6279" />
+      <SolidColorBrush x:Key="Accent" Color="#7C83FD" />
+      <SolidColorBrush x:Key="Accent2" Color="#A78BFA" />
+      <SolidColorBrush x:Key="AccentTint" Color="#267C83FD" />
+      <SolidColorBrush x:Key="Green" Color="#34D399" />
+      <SolidColorBrush x:Key="Blue" Color="#60A5FA" />
+      <SolidColorBrush x:Key="Red" Color="#F87171" />
+      <SolidColorBrush x:Key="Yellow" Color="#FBBF24" />
+      <SolidColorBrush x:Key="Purple" Color="#C084FC" />
+      <SolidColorBrush x:Key="Teal" Color="#2DD4BF" />
+      <SolidColorBrush x:Key="Pink" Color="#F472B6" />
+      <SolidColorBrush x:Key="Orange" Color="#FB923C" />
+      <LinearGradientBrush x:Key="AccentGradient" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#7C83FD" Offset="0" />
+        <GradientStop Color="#A78BFA" Offset="1" />
+      </LinearGradientBrush>
+      <RadialGradientBrush x:Key="Glow" Center="90%,0%" GradientOrigin="90%,0%" RadiusX="60%" RadiusY="80%">
+        <GradientStop Color="#227C83FD" Offset="0" />
+        <GradientStop Color="#007C83FD" Offset="1" />
+      </RadialGradientBrush>
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="BgApp" Color="#F4F5FA" />
+      <SolidColorBrush x:Key="BgSide" Color="#ECEEF7" />
+      <SolidColorBrush x:Key="BgCard" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="BgCard2" Color="#FAFBFF" />
+      <SolidColorBrush x:Key="BgHover" Color="#E5E7F5" />
+      <SolidColorBrush x:Key="BgInput" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="Line" Color="#D9DCEC" />
+      <SolidColorBrush x:Key="LineSoft" Color="#E6E8F3" />
+      <SolidColorBrush x:Key="Fg" Color="#151726" />
+      <SolidColorBrush x:Key="Fg2" Color="#383D53" />
+      <SolidColorBrush x:Key="Muted" Color="#686D85" />
+      <SolidColorBrush x:Key="Faint" Color="#989DB2" />
+      <SolidColorBrush x:Key="Accent" Color="#5A61EE" />
+      <SolidColorBrush x:Key="Accent2" Color="#8B5CF6" />
+      <SolidColorBrush x:Key="AccentTint" Color="#1F5A61EE" />
+      <SolidColorBrush x:Key="Green" Color="#059669" />
+      <SolidColorBrush x:Key="Blue" Color="#2563EB" />
+      <SolidColorBrush x:Key="Red" Color="#DC2626" />
+      <SolidColorBrush x:Key="Yellow" Color="#B45309" />
+      <SolidColorBrush x:Key="Purple" Color="#9333EA" />
+      <SolidColorBrush x:Key="Teal" Color="#0D9488" />
+      <SolidColorBrush x:Key="Pink" Color="#DB2777" />
+      <SolidColorBrush x:Key="Orange" Color="#EA580C" />
+      <LinearGradientBrush x:Key="AccentGradient" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#5A61EE" Offset="0" />
+        <GradientStop Color="#8B5CF6" Offset="1" />
+      </LinearGradientBrush>
+      <RadialGradientBrush x:Key="Glow" Center="90%,0%" GradientOrigin="90%,0%" RadiusX="60%" RadiusY="80%">
+        <GradientStop Color="#185A61EE" Offset="0" />
+        <GradientStop Color="#005A61EE" Offset="1" />
+      </RadialGradientBrush>
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>
