@@ -47,7 +47,10 @@ if ($v.ExitCode -ne 0 -or $printed -notlike "Overseer $Version*") { throw "Unexp
 Write-Host "Testing an in-app update (same arguments as Updater.InstallerStart)"
 $log = Join-Path $env:TEMP 'overseer-update-test.log'
 Remove-Item $log -ErrorAction SilentlyContinue
-$p = Start-Process $setup -ArgumentList '/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS', '/RELAUNCH', '/CURRENTUSER', "/LOG=$log" -Wait -PassThru
+# not -Wait: that also waits for every process the installer starts, and the restarted Overseer keeps running
+$p = Start-Process $setup -ArgumentList '/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS', '/RELAUNCH', '/CURRENTUSER', "/LOG=$log" -PassThru
+$null = $p.Handle   # keep the handle so ExitCode is available after it exits
+if (-not $p.WaitForExit(300000)) { $p | Stop-Process -Force; throw "Update install didn't finish within 5 minutes" }
 if ($p.ExitCode -ne 0) { throw "Update install exited with $($p.ExitCode)" }
 $text = Get-Content $log -Raw
 if ($text -notmatch '-- Run entry --[\s\S]*?Filename: .*Overseer\.exe') { throw "The update install didn't start Overseer again (no run entry in $log)" }
