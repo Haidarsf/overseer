@@ -88,6 +88,10 @@ public static class Integration
         return hooks != null && HookEvents.All(ev => hooks[ev]?.ToJsonString().Contains(Marker, StringComparison.OrdinalIgnoreCase) == true);
     }
 
+    /// <summary>True if at least one Overseer hook is registered (even a partial install).</summary>
+    public static bool AnyHookInstalled() =>
+        SettingsFile.HookRows().Any(r => r.Command.Contains(Marker, StringComparison.OrdinalIgnoreCase) && r.Command.EndsWith(" hook", StringComparison.Ordinal));
+
     public static ActionResult InstallHooks(string exePath)
     {
         return SettingsFile.Update(root =>

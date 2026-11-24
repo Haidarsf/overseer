@@ -59,7 +59,12 @@ When you run several Claude Code sessions, it's hard to tell which one is workin
 
 ## Install
 
-Download the latest build for your system from [Releases](https://github.com/Haidarsf/overseer/releases), unzip it and run **Overseer** (`Overseer.exe` on Windows). It's a self-contained app, so nothing else is needed.
+Download the latest release from [Releases](https://github.com/Haidarsf/overseer/releases):
+
+- **Windows 10 and 11**: `Overseer-Setup-<version>-x64.exe` installs Overseer for your user account (no administrator rights needed), adds it to the Start menu, and can start it when you sign in. Uninstalling removes the hooks and status line Overseer added to Claude Code and asks whether to delete its own data. A portable `.zip` is also available.
+- **macOS and Linux**: unpack the `.tar.gz` and run `Overseer`.
+
+Every build is self-contained, so nothing else is needed.
 
 - **Windows**: builds aren't code-signed yet, so SmartScreen may warn you. Choose *More info → Run anyway*, or build from source.
 - **macOS**: the app isn't notarized yet. After unpacking, run `xattr -dr com.apple.quarantine overseer-osx-*` or right-click → Open.

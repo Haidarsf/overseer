@@ -16,7 +16,13 @@ public static class SettingsFile
 {
     static readonly object WriteLock = new();
     static readonly HashSet<string> backedUp = new(StringComparer.OrdinalIgnoreCase);
-    static readonly JsonSerializerOptions Pretty = new() { WriteIndented = true, TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver() };
+    static readonly JsonSerializerOptions Pretty = new()
+    {
+        WriteIndented = true,
+        TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver(),
+        // keep quotes, <, > and non-ASCII readable in a file people edit by hand
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     /// <summary>Override for tests.</summary>
     public static string? PathOverride { get; set; }

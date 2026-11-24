@@ -27,6 +27,13 @@ public static class Program
                 case "hook": return Integration.RunHook(Console.In);
                 case "statusline": return Integration.RunStatusLine(Console.In, Console.Out);
                 case "--version": Console.WriteLine("Overseer " + typeof(Program).Assembly.GetName().Version); return 0;
+                case "--remove-integration":
+                    // used by the uninstaller: take out only the hooks and status line Overseer added
+                    var h = Integration.AnyHookInstalled() ? Integration.UninstallHooks() : ActionResult.Good("No Overseer hooks installed.");
+                    var s = Integration.UninstallStatusLine();
+                    Console.WriteLine(h.Message);
+                    Console.WriteLine(s.Message);
+                    return h.Ok && s.Ok ? 0 : 1;
                 case "--demo":
                     // made-up sessions in a temp folder; your real ~/.claude is not read or changed
                     var (claude, home) = Demo.Create(Path.Combine(Path.GetTempPath(), "overseer-demo"));

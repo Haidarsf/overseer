@@ -48,7 +48,8 @@ These keep Overseer trustworthy, so pull requests that break them won't be merge
 ## Releasing (maintainers)
 
 1. Update `Version` in `Directory.Build.props` and `CHANGELOG.md`.
-2. Tag `vX.Y.Z` and push the tag. The release workflow builds every platform and creates a **draft** GitHub release with checksums.
+2. Tag `vX.Y.Z` and push the tag. The release workflow builds every platform plus the Windows installer (tested by a silent install and uninstall) and creates a **draft** GitHub release with checksums.
+   To build the installer locally: `pwsh installer/build-installer.ps1 -Version X.Y.Z` (needs Inno Setup 6).
 3. Check the draft, then publish it.
 
 By contributing you agree that your contributions are licensed under the [MIT License](LICENSE), and to follow the [Code of Conduct](CODE_OF_CONDUCT.md).

@@ -78,6 +78,7 @@ public class TranscriptParserTests
     }
 }
 
+[Collection("settings-file")]
 public sealed class SettingsFileTests : IDisposable
 {
     readonly string dir = Directory.CreateTempSubdirectory("overseer-test-").FullName;
@@ -308,5 +309,27 @@ public class SearchAndConversationTests
         Assert.Equal("You", items[0].Role);
         Assert.DoesNotContain(items, i => i.Text.Contains("system-reminder") || i.Text.Contains("command-name"));
         Assert.Contains(items, i => i.Role == "Tool" && i.Tool == "github · create_issue");
+    }
+}
+
+[Collection("settings-file")]
+public sealed class IntegrationRemovalTests : IDisposable
+{
+    readonly string dir = Directory.CreateTempSubdirectory("overseer-rm-").FullName;
+    string FilePath => Path.Combine(dir, "settings.json");
+    public IntegrationRemovalTests() => SettingsFile.PathOverride = FilePath;
+    public void Dispose() { SettingsFile.PathOverride = null; try { Directory.Delete(dir, true); } catch { } }
+
+    [Fact]
+    public void Removes_a_partial_install_and_keeps_quotes_readable()
+    {
+        File.WriteAllText(FilePath, "{\"hooks\":{\"Stop\":[{\"hooks\":[{\"type\":\"command\",\"command\":\"say done\"}]},{\"hooks\":[{\"type\":\"command\",\"command\":\"\\\"C:/x/Overseer.exe\\\" hook\"}]}]}}");
+        Assert.True(Integration.AnyHookInstalled());
+        Assert.False(Integration.HooksInstalled());
+        Assert.True(Integration.UninstallHooks().Ok);
+        Assert.False(Integration.AnyHookInstalled());
+        var text = File.ReadAllText(FilePath);
+        Assert.Contains("say done", text);
+        Assert.DoesNotContain(((char)92) + "u0022", text); // the escaped form of a quote must not appear
     }
 }

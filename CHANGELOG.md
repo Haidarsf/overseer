@@ -15,6 +15,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Subagent and files-changed panels on the session page.
 - Graceful stop (interrupt first, force only if needed).
 - `--demo` mode with made-up data.
+- Windows installer (`Overseer-Setup-<version>-x64.exe`): per-user install, Start menu and optional desktop and startup shortcuts; uninstalling removes Overseer's hooks and status line from Claude Code settings.
 - Experimental extension API.
 - Unit tests, CI on three platforms, release workflow with checksums, packaging templates.
 
