@@ -50,6 +50,29 @@ public sealed partial class OverviewViewModel : ObservableObject
         UpdateUsage();
     }
 
+    DateTime statusLineCheckedAt;
+    bool statusLineOn;
+
+    /// <summary>Re-reads whether the status line is installed on the next update (call after turning it on or off).</summary>
+    public void StatusLineChanged() => statusLineCheckedAt = DateTime.MinValue;
+
+    /// <summary>Why the dial shows token counts instead of exact plan limits, and what to do about it.</summary>
+    string NoLimitsNote()
+    {
+        if (DateTime.Now - statusLineCheckedAt > TimeSpan.FromSeconds(30))
+        {
+            statusLineOn = Integration.StatusLineInstalled();   // reads settings.json, so not on every refresh
+            statusLineCheckedAt = DateTime.Now;
+        }
+        if (!statusLineOn)
+            return "Your exact plan limits show here once the status line is on (Settings → Live data).";
+        if (!main.Store.All.Any(s => s.Status != null))
+            return "The status line is on, but no terminal session has used it yet. Run claude in a terminal and send a message: "
+                 + "the Claude desktop app and IDE extensions don't run status lines.";
+        return "The status line is running, but Claude Code hasn't reported plan limits yet. They arrive with Claude's first reply "
+             + "in a terminal session, on Claude subscription plans.";
+    }
+
     /// <summary>The dial and its "used by" list. Cheap, so it also runs while the overview isn't showing (the mini window uses it).</summary>
     public void UpdateUsage()
     {
@@ -78,7 +101,7 @@ public sealed partial class OverviewViewModel : ObservableObject
             UsagePercent = Text.Tokens(used);
             UsageLabel = week ? "tokens this week" : "tokens in 5 hours";
             UsageReset = budget > 0 ? Math.Round(100.0 * used / budget) + "% of your own budget" : "";
-            UsageNote = "Your exact plan limits show here once the status line is on (Settings → Live data). It only runs in terminal sessions.";
+            UsageNote = NoLimitsNote();
             UsageBrush = Res.Brush(week ? "Green" : "Fg");
         }
 

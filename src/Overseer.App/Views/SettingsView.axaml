@@ -171,7 +171,7 @@
               <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding StatusLineOn}" OnContent="" OffContent="" AutomationProperties.Name="Status line" />
               <StackPanel>
                 <TextBlock Text="Status line" FontWeight="SemiBold" />
-                <TextBlock Classes="faint wrap" Text="Shows model, context and plan use under terminal sessions, and gives Overseer exact context use and your real 5-hour and weekly limits." />
+                <TextBlock Classes="faint wrap" Text="Shows model, context and plan use under terminal sessions, and gives Overseer exact context use and your real 5-hour and weekly limits. Only Claude Code in a terminal (the claude command) runs it; the Claude desktop app and IDE extensions don't." />
                 <TextBlock Text="{Binding ExistingStatusLine}" Classes="faint wrap" Foreground="{DynamicResource NeedFg}" Margin="0,4,0,0"
                            IsVisible="{Binding ExistingStatusLine, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </StackPanel>

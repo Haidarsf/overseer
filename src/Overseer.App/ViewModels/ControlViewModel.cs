@@ -346,7 +346,7 @@ public sealed partial class ControlViewModel : ObservableObject
 
     async Task SetStatusLine(bool on)
     {
-        if (!on) { Report(Integration.UninstallStatusLine()); return; }
+        if (!on) { Report(Integration.UninstallStatusLine()); main.Overview.StatusLineChanged(); main.Overview.UpdateUsage(); return; }
         var existing = Integration.CurrentStatusLineCommand();
         bool replace = false;
         if (existing != null && !Integration.StatusLineInstalled())
@@ -355,6 +355,7 @@ public sealed partial class ControlViewModel : ObservableObject
             if (!replace) { loading = true; StatusLineOn = false; loading = false; return; }
         }
         Report(Integration.InstallStatusLine(ExePath, replace));
+        main.Overview.StatusLineChanged(); main.Overview.UpdateUsage();
         Load();
     }
 
