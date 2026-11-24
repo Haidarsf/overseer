@@ -58,7 +58,7 @@ jobs:
           tar -czf "overseer-${{ matrix.rid }}.tar.gz" -C out "overseer-${{ matrix.rid }}"
           shasum -a 256 "overseer-${{ matrix.rid }}.tar.gz" > "overseer-${{ matrix.rid }}.tar.gz.sha256"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: overseer-${{ matrix.rid }}
           path: overseer-${{ matrix.rid }}.*
