@@ -1,6 +1,6 @@
 ; Overseer Windows installer (Inno Setup 6).
 ; Built by .github/workflows/release.yml:
-;   iscc /DAppVersion=0.3.1 /DSourceDir=out\overseer-win-x64 /DOutputDir=dist installer\overseer.iss
+;   iscc /DAppVersion=0.3.2 /DSourceDir=out\overseer-win-x64 /DOutputDir=dist installer\overseer.iss
 ; Installs per user (no administrator rights needed) into %LOCALAPPDATA%\Programs\Overseer.
 
 #ifndef AppVersion

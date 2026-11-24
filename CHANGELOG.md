@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-25
+
 ### Changed
 - The plan usage note says why exact limits aren't showing yet: the status line is off, it's on but no terminal session has run it (the Claude desktop app and IDE extensions don't run status lines), or it's running but Claude Code hasn't reported limits yet. Settings → Live data says the same.
 
