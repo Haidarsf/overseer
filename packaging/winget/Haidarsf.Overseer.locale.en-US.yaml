@@ -1,0 +1,14 @@
+PackageIdentifier: Haidarsf.Overseer
+PackageVersion: VERSION
+PackageLocale: en-US
+Publisher: Haidar Saifaldeen
+PublisherUrl: https://github.com/Haidarsf
+PackageName: Overseer
+PackageUrl: https://github.com/Haidarsf/overseer
+License: MIT
+LicenseUrl: https://github.com/Haidarsf/overseer/blob/main/LICENSE
+ShortDescription: See and steer your Claude Code sessions.
+Description: An independent desktop companion for Claude Code that shows what every session is doing and lets you change models, skills, plugins and permissions.
+Tags: [claude-code, ai, developer-tools, monitor]
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

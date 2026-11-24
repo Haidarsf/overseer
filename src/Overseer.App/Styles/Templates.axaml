@@ -1,0 +1,55 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="using:Overseer.App.ViewModels">
+
+  <!-- horizontal bar with label, value and optional icon -->
+  <DataTemplate x:Key="BarTemplate" x:DataType="vm:BarVM">
+    <StackPanel Margin="0,0,0,10" ToolTip.Tip="{Binding Tooltip}">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Right" Text="{Binding ValueText}" FontWeight="SemiBold" FontSize="12.5" Margin="8,0,0,0" />
+        <PathIcon DockPanel.Dock="Left" Data="{Binding Icon}" IsVisible="{Binding HasIcon}" Foreground="{Binding Brush}" Width="11" Height="11" Margin="0,0,7,0" />
+        <TextBlock Text="{Binding Label}" Classes="trim" FontSize="12.5" Foreground="{DynamicResource Fg2}" />
+      </DockPanel>
+      <ProgressBar Classes="bar" Value="{Binding Fraction}" Foreground="{Binding Brush}" Margin="0,6,0,0" />
+    </StackPanel>
+  </DataTemplate>
+
+  <!-- one column of a bar chart -->
+  <DataTemplate x:Key="ColumnTemplate" x:DataType="vm:ColumnVM">
+    <Border Height="{Binding Height}" VerticalAlignment="Bottom" Margin="2,0" CornerRadius="4,4,1,1" Background="{Binding Brush}" ToolTip.Tip="{Binding Tooltip}" />
+  </DataTemplate>
+
+  <DataTemplate x:Key="ColumnLabelTemplate" x:DataType="vm:ColumnVM">
+    <TextBlock Text="{Binding Label}" FontSize="10.5" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" />
+  </DataTemplate>
+
+  <DataTemplate x:Key="ChipTemplate" x:DataType="vm:ChipVM">
+    <Border Classes="chip" ToolTip.Tip="{Binding Tooltip}">
+      <StackPanel Orientation="Horizontal" Spacing="7">
+        <PathIcon Data="{Binding Icon}" IsVisible="{Binding HasIcon}" Foreground="{Binding Brush}" Width="11" Height="11" />
+        <TextBlock Text="{Binding Text}" FontSize="12" Foreground="{Binding Brush}" />
+      </StackPanel>
+    </Border>
+  </DataTemplate>
+
+  <DataTemplate x:Key="TextChipTemplate" x:DataType="x:String">
+    <Border Classes="chip">
+      <TextBlock Text="{Binding}" FontSize="12" Foreground="{DynamicResource Fg2}" />
+    </Border>
+  </DataTemplate>
+
+  <!-- a labelled segmented picker -->
+  <DataTemplate x:Key="PickerTemplate" x:DataType="vm:PickerVM">
+    <StackPanel Margin="0,4,0,2">
+      <TextBlock Text="{Binding Label}" IsVisible="{Binding HasLabel}" FontSize="11.5" Foreground="{DynamicResource Fg2}" Margin="0,0,0,5" />
+      <ListBox Classes="segmented" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}" AutomationProperties.Name="{Binding Label}" />
+    </StackPanel>
+  </DataTemplate>
+
+  <ItemsPanelTemplate x:Key="WrapPanelTemplate">
+    <WrapPanel />
+  </ItemsPanelTemplate>
+  <ItemsPanelTemplate x:Key="RowPanelTemplate">
+    <UniformGrid Rows="1" />
+  </ItemsPanelTemplate>
+</ResourceDictionary>

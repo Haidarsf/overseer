@@ -1,0 +1,136 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Overseer.App.ViewModels"
+        xmlns:views="using:Overseer.App.Views"
+        xmlns:ext="using:Overseer.App.Extensibility"
+        x:Class="Overseer.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Overseer"
+        Icon="/Assets/overseer.ico"
+        Width="1440" Height="920" MinWidth="1100" MinHeight="660"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource BgApp}">
+  <Panel>
+    <Border Background="{DynamicResource Glow}" IsHitTestVisible="False" />
+    <Grid RowDefinitions="64,*">
+
+      <!-- ===== header ===== -->
+      <Grid ColumnDefinitions="Auto,*,Auto" Margin="20,0">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+          <Image Source="/Assets/overseer-256.png" Width="36" Height="36" />
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Overseer" FontSize="16" FontWeight="SemiBold" />
+            <TextBlock Text="See and steer your Claude Code sessions" Classes="faint" />
+          </StackPanel>
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="10">
+          <Border CornerRadius="14" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Line}" BorderThickness="1" Padding="12,6">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Ellipse Width="8" Height="8" Fill="{Binding StatusBrush}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="{DynamicResource Fg2}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Border>
+          <ToggleButton IsChecked="{Binding Redact}" Margin="0" Padding="9,7" CornerRadius="9"
+                        ToolTip.Tip="Redact mode: hide your prompts, paths and emails (for screenshots and streaming)"
+                        AutomationProperties.Name="Redact mode">
+            <PathIcon Data="{StaticResource Icon.EyeOff}" />
+          </ToggleButton>
+          <Button Command="{Binding ToggleMiniCommand}" Margin="0" Padding="9,7" ToolTip.Tip="Mini mode: a small always-on-top list of live sessions"
+                  AutomationProperties.Name="Mini mode">
+            <PathIcon Data="{StaticResource Icon.Mini}" />
+          </Button>
+          <ListBox Classes="segmented" ItemsSource="{Binding Pages}" SelectedIndex="{Binding PageIndex}" Margin="0" AutomationProperties.Name="Pages" />
+        </StackPanel>
+      </Grid>
+
+      <!-- ===== body ===== -->
+      <Grid Grid.Row="1" ColumnDefinitions="320,*">
+        <Border Background="{DynamicResource BgSide}" BorderBrush="{DynamicResource LineSoft}" BorderThickness="0,1,1,0" CornerRadius="0,16,0,0">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Text="SESSIONS" Classes="label" Margin="20,16,0,6" />
+            <ListBox Classes="sessions" ItemsSource="{Binding Sessions}" SelectedItem="{Binding SelectedItem}" AutomationProperties.Name="Sessions">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:SessionItemVM">
+                  <Grid ColumnDefinitions="44,*" ToolTip.Tip="{Binding Tooltip}">
+                    <Panel Width="34" Height="34" HorizontalAlignment="Left" VerticalAlignment="Center">
+                      <Border CornerRadius="10" Background="{Binding AvatarBg}">
+                        <TextBlock Text="{Binding Initial}" Foreground="{Binding AvatarBrush}" FontWeight="Bold" FontSize="14"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
+                      <Border Width="13" Height="13" CornerRadius="7" Background="{DynamicResource BgSide}" IsVisible="{Binding ShowDot}"
+                              HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3">
+                        <Ellipse Width="8" Height="8" Fill="{Binding StateBrush}" Classes.pulse="{Binding IsWorking}" />
+                      </Border>
+                    </Panel>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Classes="trim" />
+                      <TextBlock Text="{Binding Subtitle}" Classes="faint trim" Margin="0,3,0,0" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </Border>
+
+        <Panel Grid.Column="1">
+          <Panel IsVisible="{Binding IsSessionPage}">
+            <TextBlock IsVisible="{Binding NoSession}" Text="No Claude Code sessions found yet. Start one and it shows up here." Classes="muted" Margin="30" />
+            <Panel IsVisible="{Binding !NoSession}"><views:SessionView DataContext="{Binding Detail}" /></Panel>
+          </Panel>
+          <Panel IsVisible="{Binding IsOverviewPage}"><views:OverviewView DataContext="{Binding Overview}" /></Panel>
+          <Panel IsVisible="{Binding IsReportsPage}"><views:ReportsView DataContext="{Binding Reports}" /></Panel>
+          <Panel IsVisible="{Binding IsSearchPage}"><views:SearchView DataContext="{Binding Search}" /></Panel>
+          <Panel IsVisible="{Binding IsControlPage}"><views:ControlView DataContext="{Binding Control}" /></Panel>
+          <Panel IsVisible="{Binding IsConfigurePage}"><views:ConfigureView DataContext="{Binding Configure}" /></Panel>
+          <ScrollViewer IsVisible="{Binding IsExtensionsPage}">
+            <ItemsControl ItemsSource="{Binding Extensions}" Margin="23,24">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="ext:ExtensionVM">
+                  <Border Classes="card">
+                    <StackPanel>
+                      <TextBlock Text="{Binding Name}" Classes="title" Margin="0,0,0,12" />
+                      <ContentControl Content="{Binding View}" />
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Panel>
+      </Grid>
+    </Grid>
+
+    <!-- ===== toasts ===== -->
+    <ItemsControl ItemsSource="{Binding Toasts}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="400" Margin="0,0,24,20">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:ToastVM">
+          <Button Classes="toast" Margin="0,8,0,0" Padding="0" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                  Command="{ReflectionBinding $parent[Window].DataContext.DismissToastCommand}" CommandParameter="{Binding}"
+                  ToolTip.Tip="Click to dismiss">
+            <Border Background="{DynamicResource BgCard}" BorderBrush="{Binding Brush}" BorderThickness="1" CornerRadius="12" Padding="14,10,14,11"
+                    BoxShadow="0 6 24 0 #66000000">
+              <DockPanel>
+                <PathIcon DockPanel.Dock="Left" Data="{Binding Icon}" Foreground="{Binding Brush}" Margin="0,1,10,0" VerticalAlignment="Top" />
+                <TextBlock Text="{Binding Message}" Classes="wrap" FontSize="12.5" FontWeight="Normal" />
+              </DockPanel>
+            </Border>
+          </Button>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <!-- ===== confirmation dialog ===== -->
+    <Border IsVisible="{Binding ConfirmVisible}" Background="#99000000">
+      <Border Classes="card" Width="480" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24,22" BoxShadow="0 12 40 0 #88000000">
+        <StackPanel Spacing="18">
+          <TextBlock Text="{Binding ConfirmText}" Classes="wrap" FontSize="13.5" LineHeight="20" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancel" Command="{Binding ConfirmCancelCommand}" IsCancel="True" />
+            <Button Classes="primary" Content="{Binding ConfirmYes}" Command="{Binding ConfirmAcceptCommand}" IsDefault="True" Margin="0" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+  </Panel>
+</Window>

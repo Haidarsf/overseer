@@ -1,0 +1,281 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Overseer.App.ViewModels"
+             xmlns:c="using:Overseer.App.Controls"
+             x:Class="Overseer.App.Views.SessionView"
+             x:DataType="vm:SessionDetailViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="30,24,30,30">
+      <TextBlock Text="{Binding Title}" Classes="h1" />
+      <ItemsControl ItemsSource="{Binding Chips}" ItemTemplate="{StaticResource ChipTemplate}" ItemsPanel="{StaticResource WrapPanelTemplate}" Margin="0,10,0,8" />
+
+      <!-- actions -->
+      <WrapPanel Margin="0,0,0,4">
+        <Button Command="{Binding ResumeCommand}"><StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.Terminal}" Width="12" Height="12" /><TextBlock Text="Resume in terminal" /></StackPanel></Button>
+        <Button Command="{Binding OpenDesktopCommand}"><StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.External}" Width="12" Height="12" /><TextBlock Text="Open in desktop app" /></StackPanel></Button>
+        <Button Command="{Binding OpenFolderCommand}"><StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.Folder}" Width="12" Height="12" /><TextBlock Text="Open folder" /></StackPanel></Button>
+        <Button Command="{Binding ShowTranscriptCommand}"><StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.File}" Width="12" Height="12" /><TextBlock Text="Show transcript" /></StackPanel></Button>
+        <Button Command="{Binding LoadConversationCommand}"><StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.Chat}" Width="12" Height="12" /><TextBlock Text="Read conversation" /></StackPanel></Button>
+        <Button Classes="danger" Command="{Binding StopCommand}" IsVisible="{Binding IsLive}"><StackPanel Orientation="Horizontal" Spacing="8"><PathIcon Data="{StaticResource Icon.Stop}" Width="12" Height="12" Foreground="{DynamicResource Red}" /><TextBlock Text="Stop session" /></StackPanel></Button>
+      </WrapPanel>
+      <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,16">
+        <TextBlock Text="Continue as a copy with" Classes="muted" VerticalAlignment="Center"
+                   ToolTip.Tip="Opens a terminal with a new copy of this conversation (--fork-session) on the model you pick. The original session is untouched." />
+        <ListBox Classes="segmented small" ItemsSource="{Binding ForkModels}" SelectedItem="{Binding ForkPick}" Margin="0" AutomationProperties.Name="Continue as a copy with model" />
+      </StackPanel>
+
+      <!-- hero: what's happening right now -->
+      <Border CornerRadius="18" Padding="22,18" Background="{Binding HeroBg}" BorderBrush="{Binding StateBrush}" BorderThickness="1" BoxShadow="0 8 28 0 #40000000">
+        <Grid ColumnDefinitions="72,*,Auto">
+          <Panel Width="54" Height="54" HorizontalAlignment="Left">
+            <Ellipse Classes="ring" Stroke="{Binding StateBrush}" StrokeThickness="2" IsVisible="{Binding IsWorking}" RenderTransformOrigin="50%,50%">
+              <Ellipse.RenderTransform><ScaleTransform /></Ellipse.RenderTransform>
+            </Ellipse>
+            <Ellipse Fill="{Binding StateBrush}" />
+            <PathIcon Data="{Binding HeroIcon}" Foreground="#16182A" Width="22" Height="22" />
+          </Panel>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="RIGHT NOW" FontSize="10.5" FontWeight="Bold" Foreground="{Binding StateBrush}" />
+              <TextBlock Text="·" Foreground="{Binding StateBrush}" FontSize="10.5" />
+              <TextBlock Text="{Binding StateText}" FontSize="10.5" FontWeight="Bold" Foreground="{Binding StateBrush}" />
+              <TextBlock Text="{Binding SourceNote}" Classes="faint" FontSize="10.5" Margin="6,0,0,0" />
+            </StackPanel>
+            <TextBlock Text="{Binding HeroHead}" FontSize="21" FontWeight="SemiBold" Classes="trim" Margin="0,3,0,2" />
+            <TextBlock Text="{Binding HeroDetail}" FontSize="13" Foreground="{DynamicResource Fg2}" Classes="trim" ToolTip.Tip="{Binding HeroDetail}" />
+          </StackPanel>
+          <Border Grid.Column="2" CornerRadius="14" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Line}" BorderThickness="1" Padding="16,10" Margin="18,0,0,0" VerticalAlignment="Center">
+            <StackPanel>
+              <TextBlock Text="MODEL" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Muted}" />
+              <TextBlock Text="{Binding ModelName}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource Accent2}" Margin="0,2,0,1" />
+              <TextBlock Text="{Binding ModelId}" Classes="mono faint" FontSize="11" />
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+
+      <!-- stat cards -->
+      <UniformGrid Columns="4" Margin="-7,14,-7,0">
+        <Border Classes="card">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+              <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Bulb}" Width="12" Height="12" Foreground="{Binding ContextBrush}" /></Border>
+              <TextBlock Text="Context window" Classes="title" VerticalAlignment="Center" ToolTip.Tip="{Binding ContextSource}" />
+            </StackPanel>
+            <Grid ColumnDefinitions="Auto,*">
+              <Panel Width="92" Height="92">
+                <c:Ring Value="{Binding ContextFraction}" Stroke="{Binding ContextBrush}" Track="{DynamicResource LineSoft}" Thickness="10" />
+                <TextBlock Text="{Binding ContextPercent}" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Panel>
+              <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding ContextUsed}" FontSize="22" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding ContextOf}" Classes="muted" />
+                <TextBlock Text="{Binding ContextLeft}" Foreground="{Binding ContextBrush}" FontSize="11.5" FontWeight="SemiBold" Margin="0,6,0,0" />
+              </StackPanel>
+            </Grid>
+            <TextBlock Text="{Binding ContextSource}" Classes="faint" Margin="0,10,0,0" FontSize="10.5" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+              <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Coins}" Width="12" Height="12" Foreground="{DynamicResource Accent2}" /></Border>
+              <TextBlock Text="Tokens" Classes="title" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock Text="{Binding TotalTokens}" Classes="big" />
+            <TextBlock Text="{Binding CostText}" Classes="faint" Margin="0,0,0,8" />
+            <ItemsControl ItemsSource="{Binding TokenParts}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:BarVM">
+                  <StackPanel Margin="0,0,0,6" ToolTip.Tip="{Binding Tooltip}">
+                    <DockPanel>
+                      <TextBlock DockPanel.Dock="Right" Text="{Binding ValueText}" FontSize="11.5" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding Label}" Classes="muted" FontSize="11.5" />
+                    </DockPanel>
+                    <ProgressBar Classes="bar" Height="4" MinHeight="4" Value="{Binding Fraction}" Foreground="{Binding Brush}" Margin="0,3,0,0" />
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+              <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Pulse}" Width="12" Height="12" Foreground="{DynamicResource Blue}" /></Border>
+              <TextBlock Text="Activity" Classes="title" VerticalAlignment="Center" />
+            </StackPanel>
+            <UniformGrid Columns="2">
+              <StackPanel Margin="0,0,8,12"><TextBlock Text="{Binding ToolCalls}" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource Blue}" /><TextBlock Text="tool calls" Classes="muted" /></StackPanel>
+              <StackPanel Margin="0,0,8,12"><TextBlock Text="{Binding Calls}" FontSize="24" FontWeight="SemiBold" /><TextBlock Text="model calls" Classes="muted" /></StackPanel>
+              <StackPanel><TextBlock Text="{Binding Prompts}" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" /><TextBlock Text="your prompts" Classes="muted" /></StackPanel>
+              <StackPanel><TextBlock Text="{Binding Errors}" FontSize="24" FontWeight="SemiBold" Foreground="{Binding ErrorsBrush}" /><TextBlock Text="tool errors" Classes="muted" /></StackPanel>
+            </UniformGrid>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+              <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Clock}" Width="12" Height="12" Foreground="{DynamicResource Teal}" /></Border>
+              <TextBlock Text="Timing" Classes="title" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock Text="{Binding Span}" Classes="big" />
+            <TextBlock Text="session length" Classes="muted" />
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" Margin="0,12,0,0">
+              <TextBlock Text="Started" Classes="muted" />
+              <TextBlock Grid.Column="1" Text="{Binding Started}" FontSize="12.5" FontWeight="SemiBold" />
+              <TextBlock Grid.Row="1" Text="Last activity" Classes="muted" Margin="0,4" />
+              <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LastActivity}" FontSize="12.5" FontWeight="SemiBold" Margin="0,4" />
+              <TextBlock Grid.Row="2" Text="Subagents" Classes="muted" />
+              <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Subagents.Count}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Purple}" />
+            </Grid>
+          </StackPanel>
+        </Border>
+      </UniformGrid>
+
+      <Grid ColumnDefinitions="3*,2*" Margin="-7,0">
+        <!-- left: timeline or conversation -->
+        <StackPanel>
+          <Border Classes="card" IsVisible="{Binding ShowConversation}">
+            <StackPanel>
+              <DockPanel Margin="0,0,0,14">
+                <Button DockPanel.Dock="Right" Content="Back to timeline" Command="{Binding HideConversationCommand}" Margin="0" />
+                <StackPanel Orientation="Horizontal">
+                  <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Chat}" Width="12" Height="12" Foreground="{DynamicResource Accent}" /></Border>
+                  <TextBlock Text="Conversation" Classes="title" VerticalAlignment="Center" />
+                </StackPanel>
+              </DockPanel>
+              <ItemsControl ItemsSource="{Binding Conversation}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ConversationVM">
+                    <Border BorderBrush="{Binding Brush}" BorderThickness="2,0,0,0" Padding="12,4,4,4" Margin="0,0,0,10">
+                      <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                          <TextBlock Text="{Binding Who}" FontWeight="SemiBold" FontSize="12.5" Foreground="{Binding Brush}" />
+                          <TextBlock Text="{Binding Time}" Classes="mono faint" />
+                        </StackPanel>
+                        <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12.5" Margin="0,4,0,0" Foreground="{DynamicResource Fg2}" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="card" IsVisible="{Binding !ShowConversation}">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Clock}" Width="12" Height="12" Foreground="{DynamicResource Accent}" /></Border>
+                <TextBlock Text="Activity timeline · newest first" Classes="title" VerticalAlignment="Center" />
+              </StackPanel>
+              <ItemsControl ItemsSource="{Binding Timeline}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:TimelineItemVM">
+                    <StackPanel>
+                      <TextBlock Text="{Binding DayHeader}" IsVisible="{Binding HasDayHeader}" Classes="muted" FontWeight="SemiBold" Margin="38,6,0,10" />
+                      <Grid ColumnDefinitions="38,*">
+                        <Border Width="2" Background="{DynamicResource LineSoft}" HorizontalAlignment="Left" Margin="13,26,0,0" IsVisible="{Binding ShowLine}" />
+                        <Border Width="28" Height="28" CornerRadius="14" Background="{Binding Tint}" VerticalAlignment="Top" HorizontalAlignment="Left">
+                          <PathIcon Data="{Binding Icon}" Foreground="{Binding Brush}" Width="12" Height="12" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="8,3,4,12">
+                          <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Time}" Classes="mono faint" Margin="10,1,0,0" />
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" Classes="trim" />
+                          </DockPanel>
+                          <TextBlock Text="{Binding Detail}" IsVisible="{Binding HasDetail}" Classes="muted trim" Classes.mono="{Binding Mono}" Margin="0,2,0,0" ToolTip.Tip="{Binding Detail}" />
+                        </StackPanel>
+                      </Grid>
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- right: breakdowns -->
+        <StackPanel Grid.Column="1">
+          <Border Classes="card">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Tool}" Width="12" Height="12" Foreground="{DynamicResource Blue}" /></Border>
+                <TextBlock Text="Tools used" Classes="title" VerticalAlignment="Center" />
+              </StackPanel>
+              <ItemsControl ItemsSource="{Binding ToolBars}" ItemTemplate="{StaticResource BarTemplate}" />
+              <TextBlock Text="No tool calls yet." Classes="muted" IsVisible="{Binding !HasTools}" />
+            </StackPanel>
+          </Border>
+          <Border Classes="card" IsVisible="{Binding HasMcp}">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Puzzle}" Width="12" Height="12" Foreground="{DynamicResource Purple}" /></Border>
+                <TextBlock Text="MCP servers and connectors" Classes="title" VerticalAlignment="Center" />
+              </StackPanel>
+              <ItemsControl ItemsSource="{Binding McpBars}" ItemTemplate="{StaticResource BarTemplate}" />
+            </StackPanel>
+          </Border>
+          <Border Classes="card" IsVisible="{Binding HasSubagents}">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Robot}" Width="12" Height="12" Foreground="{DynamicResource Purple}" /></Border>
+                <TextBlock Text="Subagents" Classes="title" VerticalAlignment="Center" />
+              </StackPanel>
+              <ItemsControl ItemsSource="{Binding Subagents}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:SubagentVM">
+                    <StackPanel Margin="0,0,0,10">
+                      <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold" Classes="trim" ToolTip.Tip="{Binding Title}" />
+                      <TextBlock Text="{Binding Meta}" Classes="faint" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+          <Border Classes="card" IsVisible="{Binding HasFiles}">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Edit}" Width="12" Height="12" Foreground="{DynamicResource Green}" /></Border>
+                <TextBlock Text="Files changed" Classes="title" VerticalAlignment="Center" />
+              </StackPanel>
+              <ItemsControl ItemsSource="{Binding FilesChanged}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:FileVM">
+                    <DockPanel Margin="0,0,0,6" ToolTip.Tip="{Binding Path}">
+                      <TextBlock DockPanel.Dock="Right" Text="{Binding Count}" Classes="faint" />
+                      <TextBlock Text="{Binding Name}" FontSize="12.5" Classes="trim mono" />
+                    </DockPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+          <Border Classes="card">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Bolt}" Width="12" Height="12" Foreground="{DynamicResource Accent2}" /></Border>
+                <TextBlock Text="Skills invoked" Classes="title" VerticalAlignment="Center" />
+              </StackPanel>
+              <ItemsControl ItemsSource="{Binding SkillsInvoked}" ItemTemplate="{StaticResource TextChipTemplate}" ItemsPanel="{StaticResource WrapPanelTemplate}" />
+              <TextBlock Text="No skills invoked in this session." Classes="muted" IsVisible="{Binding !HasSkills}" />
+            </StackPanel>
+          </Border>
+          <Border Classes="card">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                <Border Classes="iconbox"><PathIcon Data="{StaticResource Icon.Bulb}" Width="12" Height="12" Foreground="{DynamicResource Yellow}" /></Border>
+                <TextBlock Text="{Binding SkillsAvailableTitle}" Classes="title" VerticalAlignment="Center" />
+              </StackPanel>
+              <ItemsControl ItemsSource="{Binding SkillsAvailable}" ItemTemplate="{StaticResource TextChipTemplate}" ItemsPanel="{StaticResource WrapPanelTemplate}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

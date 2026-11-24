@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Version>0.2.0</Version>
+    <Authors>Haidar Saifaldeen</Authors>
+    <Product>Overseer</Product>
+    <Description>An unofficial desktop companion for Claude Code: see what every session is doing and control it.</Description>
+    <Copyright>Copyright (c) 2026 Haidar Saifaldeen</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Haidarsf/overseer</RepositoryUrl>
+  </PropertyGroup>
+</Project>

@@ -1,4 +1,17 @@
 # build output
+bin/
+obj/
+out/
+publish/
 *.exe
 *.pdb
-src/*.new
+*.user
+*.suo
+.vs/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+TestResults/
+*.swp
+.DS_Store
+Thumbs.db

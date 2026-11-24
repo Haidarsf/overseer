@@ -1,0 +1,41 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: overseer
+    attributes:
+      label: Overseer version
+      placeholder: "Overseer --version"
+    validations:
+      required: true
+  - type: input
+    id: claude
+    attributes:
+      label: Claude Code version
+      placeholder: "claude --version"
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [Windows, macOS, Linux]
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where do you run Claude Code?
+      multiple: true
+      options: [Terminal (CLI), Claude desktop app, IDE extension, Other]
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or transcript lines
+      description: Turn on redact mode (eye button) before taking screenshots. Remove anything private from transcript lines.

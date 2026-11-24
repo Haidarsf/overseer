@@ -1,0 +1,24 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Overseer.App.App"
+             Name="Overseer"
+             RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://Overseer/Styles/Colors.axaml" />
+        <ResourceInclude Source="avares://Overseer/Styles/Icons.axaml" />
+        <ResourceInclude Source="avares://Overseer/Styles/Templates.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark" Accent="#7C83FD" RegionColor="#0F1117" AltHigh="#0F1117" />
+        <ColorPaletteResources x:Key="Light" Accent="#5A61EE" RegionColor="#F4F5FA" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://Overseer/Styles/Theme.axaml" />
+  </Application.Styles>
+</Application>
