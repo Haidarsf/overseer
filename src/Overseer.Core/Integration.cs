@@ -126,6 +126,51 @@ public static class Integration
         }, "Live events turned off.");
     }
 
+    // ---------- answering permission prompts from Overseer (a separate, synchronous PermissionRequest hook) ----------
+
+    public static bool PermissionHookInstalled() =>
+        SettingsFile.HookRows().Any(r => r.Event == "PermissionRequest" && IsOurs(r.Command, " permission"));
+
+    /// <param name="waitSeconds">How long a prompt waits for an answer in Overseer before Claude Code asks in the terminal.</param>
+    public static ActionResult InstallPermissionHook(string exePath, int waitSeconds)
+    {
+        return SettingsFile.Update(root =>
+        {
+            var hooks = root["hooks"] as JsonObject ?? new JsonObject();
+            root["hooks"] = hooks;
+            var groups = hooks["PermissionRequest"] as JsonArray ?? new JsonArray();
+            hooks["PermissionRequest"] = groups;
+            RemoveOurs(groups, " permission");
+            var handler = new JsonObject { ["type"] = "command", ["command"] = CommandFor(exePath, "permission"), ["timeout"] = waitSeconds + 15 };
+            groups.Add(new JsonObject { ["matcher"] = "*", ["hooks"] = new JsonArray(handler) });
+        }, "New sessions will send permission prompts here while Overseer is open.");
+    }
+
+    public static ActionResult UninstallPermissionHook()
+    {
+        return SettingsFile.Update(root =>
+        {
+            if (root["hooks"] is not JsonObject hooks || hooks["PermissionRequest"] is not JsonArray groups) return;
+            RemoveOurs(groups, " permission");
+            if (groups.Count == 0) hooks.Remove("PermissionRequest");
+            if (hooks.Count == 0) root.Remove("hooks");
+        }, "Permission prompts will only be asked in the terminal.");
+    }
+
+    static bool IsOurs(string? command, string mode) =>
+        command?.Contains(Marker, StringComparison.OrdinalIgnoreCase) == true && command.EndsWith(mode, StringComparison.Ordinal);
+
+    static void RemoveOurs(JsonArray groups, string mode)
+    {
+        for (int i = groups.Count - 1; i >= 0; i--)
+        {
+            if (groups[i] is not JsonObject g || g["hooks"] is not JsonArray hs) continue;
+            for (int j = hs.Count - 1; j >= 0; j--)
+                if (IsOurs(hs[j]?["command"]?.GetValue<string>(), mode)) hs.RemoveAt(j);
+            if (hs.Count == 0) groups.RemoveAt(i);
+        }
+    }
+
     static void RemoveOurs(JsonArray groups)
     {
         for (int i = groups.Count - 1; i >= 0; i--)

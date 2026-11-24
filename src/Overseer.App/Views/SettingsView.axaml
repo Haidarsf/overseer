@@ -1,0 +1,417 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Overseer.App.ViewModels"
+             xmlns:views="using:Overseer.App.Views"
+             x:Class="Overseer.App.Views.SettingsView"
+             x:DataType="vm:MainViewModel">
+  <UserControl.Styles>
+    <!-- a preferences window: section list on the left -->
+    <Style Selector="TabControl">
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="Padding" Value="10,5" />
+      <Setter Property="Margin" Value="6,0,6,1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+    </Style>
+    <Style Selector="TabItem:selected">
+      <Setter Property="Background" Value="{DynamicResource Sel}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TabItem:pointerover /template/ Border#PART_LayoutRoot">
+      <Setter Property="Background" Value="{DynamicResource BgHover}" />
+    </Style>
+    <Style Selector="TabItem /template/ Border#PART_SelectedPipe">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="StackPanel.page">
+      <Setter Property="Margin" Value="22,16,22,24" />
+      <Setter Property="MaxWidth" Value="780" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Spacing" Value="10" />
+    </Style>
+    <Style Selector="TextBlock.pageTitle">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <!-- radio-style choice lists -->
+    <Style Selector="ListBox.choices">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="AutoScrollToSelectedItem" Value="False" />
+    </Style>
+    <Style Selector="ListBox.choices ListBoxItem">
+      <Setter Property="Padding" Value="8,6" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="MinHeight" Value="32" />
+    </Style>
+    <Style Selector="ListBox.choices ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Sel}" />
+      <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+    </Style>
+    <Style Selector="Border.row">
+      <Setter Property="BorderBrush" Value="{DynamicResource LineSoft}" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="Padding" Value="0,8,0,10" />
+    </Style>
+  </UserControl.Styles>
+
+  <UserControl.Resources>
+    <DataTemplate x:Key="ChoiceTemplate" x:DataType="vm:Option">
+      <DockPanel>
+        <Panel DockPanel.Dock="Left" Width="14" Height="14" Margin="0,0,10,0" VerticalAlignment="Center">
+          <Ellipse Stroke="{DynamicResource Muted}" StrokeThickness="1.5" />
+          <Ellipse Width="6" Height="6" Fill="{DynamicResource Fg}" IsVisible="{Binding $parent[ListBoxItem].IsSelected}" />
+        </Panel>
+        <TextBlock DockPanel.Dock="Right" Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource Muted}" Margin="12,0,0,0" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+      </DockPanel>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <TabControl TabStripPlacement="Left" SelectedIndex="{Binding Control.Tab}" Background="{DynamicResource BgApp}">
+
+    <!-- 0 -->
+    <TabItem Header="Model and effort">
+      <ScrollViewer DataContext="{Binding Control}" x:DataType="vm:ControlViewModel">
+        <StackPanel Classes="page">
+          <TextBlock Text="Model and effort" Classes="pageTitle" />
+          <Border Classes="note">
+            <StackPanel>
+              <TextBlock Classes="wrap" FontSize="12" Foreground="{DynamicResource Fg2}"
+                         Text="Saved to ~/.claude/settings.json and used by new sessions in every project, unless a project sets its own. Running sessions keep what they started with." />
+              <TextBlock Text="{Binding Overrides}" Classes="wrap" FontSize="12" FontWeight="SemiBold" Margin="0,4,0,0"
+                         IsVisible="{Binding Overrides, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            </StackPanel>
+          </Border>
+          <TextBlock Text="Default model for new sessions" Classes="h2" Margin="0,6,0,0" />
+          <ListBox Classes="choices" ItemsSource="{Binding Model.Items}" SelectedItem="{Binding Model.Selected}" ItemTemplate="{StaticResource ChoiceTemplate}"
+                   AutomationProperties.Name="Default model" />
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Use this model" Command="{Binding UseCustomModelCommand}" Margin="8,0,0,0" />
+            <TextBox Text="{Binding CustomModel}" Watermark="or type a model id, e.g. claude-opus-5-5" AutomationProperties.Name="Custom model id" />
+          </DockPanel>
+          <TextBlock Text="{Binding CustomModelNote}" Classes="faint" IsVisible="{Binding CustomModelNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+          <TextBlock Text="Effort, per model" Classes="h2" Margin="0,10,0,0" />
+          <TextBlock Text="Each model keeps its own effort. Higher effort thinks longer and uses more of your plan." Classes="faint wrap" />
+          <ItemsControl ItemsSource="{Binding Efforts}" ItemTemplate="{StaticResource PickerTemplate}" />
+
+          <TextBlock Text="Output style" Classes="h2" Margin="0,10,0,0" />
+          <ContentControl Content="{Binding OutputStyle}" ContentTemplate="{StaticResource PickerTemplate}" />
+
+          <Border Classes="row">
+            <DockPanel>
+              <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding Thinking}" OnContent="" OffContent="" AutomationProperties.Name="Extended thinking" />
+              <StackPanel><TextBlock Text="Extended thinking" FontWeight="SemiBold" /><TextBlock Text="Let Claude think before answering. Some models always think." Classes="faint wrap" /></StackPanel>
+            </DockPanel>
+          </Border>
+          <Border Classes="row">
+            <DockPanel>
+              <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding SpinnerTips}" OnContent="" OffContent="" AutomationProperties.Name="Spinner tips" />
+              <StackPanel><TextBlock Text="Spinner tips" FontWeight="SemiBold" /><TextBlock Text="Show tips in the terminal while Claude works." Classes="faint wrap" /></StackPanel>
+            </DockPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+    <!-- 1 -->
+    <TabItem Header="Permissions">
+      <ScrollViewer DataContext="{Binding Control}" x:DataType="vm:ControlViewModel">
+        <StackPanel Classes="page">
+          <TextBlock Text="Permissions" Classes="pageTitle" />
+          <TextBlock Text="Default permission mode for new sessions" Classes="h2" />
+          <ListBox Classes="choices" ItemsSource="{Binding PermissionMode.Items}" SelectedItem="{Binding PermissionMode.Selected}" ItemTemplate="{StaticResource ChoiceTemplate}"
+                   AutomationProperties.Name="Default permission mode" />
+          <TextBlock Text="Your default is currently bypassPermissions (every check skipped). Pick a mode above to turn that off."
+                     IsVisible="{Binding BypassWarning}" Classes="wrap" Foreground="{DynamicResource Red}" FontSize="12.5" />
+          <Border Classes="note">
+            <TextBlock Classes="wrap" FontSize="12" Foreground="{DynamicResource Fg2}"
+                       Text="Applies to new sessions only; running sessions keep their mode (change it inside the session with Shift+Tab). Overseer never offers the mode that skips every check." />
+          </Border>
+          <TextBlock Text="Rules" Classes="h2" Margin="0,8,0,0" />
+          <TextBlock Text="Commands and files Claude may always use, must always ask about, or may never touch." Classes="faint wrap" />
+          <Button Content="Edit allow, ask and deny rules" HorizontalAlignment="Left" Command="{Binding GoRulesCommand}" />
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+    <!-- 2 -->
+    <TabItem Header="Live data">
+      <ScrollViewer DataContext="{Binding Control}" x:DataType="vm:ControlViewModel">
+        <StackPanel Classes="page">
+          <TextBlock Text="Live data" Classes="pageTitle" />
+          <TextBlock Text="Without these, Overseer still works by reading session logs; it's just a few seconds behind and can't show your plan limits."
+                     Classes="faint wrap" />
+          <Border Classes="row">
+            <DockPanel>
+              <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding HooksOn}" OnContent="" OffContent="" AutomationProperties.Name="Live events" />
+              <StackPanel>
+                <TextBlock Text="Live events" FontWeight="SemiBold" />
+                <TextBlock Classes="faint wrap" Text="Shows the exact tool running, permission prompts and finishes the moment they happen. These hooks run in the background, print nothing and never change what Claude does. Applies to new sessions." />
+              </StackPanel>
+            </DockPanel>
+          </Border>
+          <Border Classes="row">
+            <DockPanel>
+              <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding AnswerPrompts}" OnContent="" OffContent="" AutomationProperties.Name="Answer permission prompts here" />
+              <StackPanel Spacing="4">
+                <TextBlock Text="Answer permission prompts here" FontWeight="SemiBold" />
+                <TextBlock Classes="faint wrap" Text="While Overseer is open, permission prompts from new sessions come here first: allow, always allow, or deny with a note from the overview, the bell or the mini window. If you don't answer in time, Claude Code asks in the terminal as usual. When Overseer isn't running, nothing changes." />
+                <ContentControl Content="{Binding WaitPicker}" ContentTemplate="{StaticResource PickerTemplate}" IsVisible="{Binding AnswerPrompts}" />
+              </StackPanel>
+            </DockPanel>
+          </Border>
+          <Border Classes="row">
+            <DockPanel>
+              <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding StatusLineOn}" OnContent="" OffContent="" AutomationProperties.Name="Status line" />
+              <StackPanel>
+                <TextBlock Text="Status line" FontWeight="SemiBold" />
+                <TextBlock Classes="faint wrap" Text="Shows model, context and plan use under terminal sessions, and gives Overseer exact context use and your real 5-hour and weekly limits." />
+                <TextBlock Text="{Binding ExistingStatusLine}" Classes="faint wrap" Foreground="{DynamicResource NeedFg}" Margin="0,4,0,0"
+                           IsVisible="{Binding ExistingStatusLine, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </DockPanel>
+          </Border>
+          <TextBlock Classes="faint wrap" Text="All three are standard Claude Code features written to ~/.claude/settings.json. Turning one off removes only what Overseer added." />
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+    <!-- 3 -->
+    <TabItem Header="Skills">
+      <ScrollViewer DataContext="{Binding Control}" x:DataType="vm:ControlViewModel">
+        <StackPanel Classes="page">
+          <TextBlock Text="Skills" Classes="pageTitle" />
+          <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto">
+            <TextBlock Text="On" FontWeight="SemiBold" FontSize="12" Margin="0,0,14,2" />
+            <TextBlock Grid.Column="1" Text="Claude sees the skill and uses it when it fits." FontSize="12" Foreground="{DynamicResource Fg2}" />
+            <TextBlock Grid.Row="1" Text="Name only" FontWeight="SemiBold" FontSize="12" Margin="0,0,14,2" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="Claude sees just the name, not the description, so it uses it less often." FontSize="12" Foreground="{DynamicResource Fg2}" />
+            <TextBlock Grid.Row="2" Text="Only via /command" FontWeight="SemiBold" FontSize="12" Margin="0,0,14,2" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="Claude never picks it; you run it by typing /name." FontSize="12" Foreground="{DynamicResource Fg2}" />
+            <TextBlock Grid.Row="3" Text="Off" FontWeight="SemiBold" FontSize="12" Margin="0,0,14,2" />
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="Hidden from Claude." FontSize="12" Foreground="{DynamicResource Fg2}" />
+          </Grid>
+          <Border Classes="pane">
+            <ItemsControl ItemsSource="{Binding Skills}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:SkillRowVM">
+                  <Border BorderBrush="{DynamicResource LineSoft}" BorderThickness="0,0,0,1" Padding="12,6">
+                    <DockPanel>
+                      <ComboBox DockPanel.Dock="Right" ItemsSource="{Binding Picker.Items}" SelectedItem="{Binding Picker.Selected}" Width="170" VerticalAlignment="Center"
+                                AutomationProperties.Name="{Binding Name}" />
+                      <StackPanel Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                          <TextBlock Text="{Binding SourceText}" FontSize="11.5" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Description}" Classes="faint trim" ToolTip.Tip="{Binding Description}" />
+                      </StackPanel>
+                    </DockPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+          <TextBlock Text="Applies to new sessions. Skills that come from plugins follow their plugin." Classes="faint" />
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Create" Command="{Binding CreateSkillCommand}" Margin="8,0,0,0" />
+            <TextBox Text="{Binding NewSkillName}" Watermark="new-skill-name" AutomationProperties.Name="New skill name" />
+          </DockPanel>
+          <WrapPanel>
+            <Button Content="Install from folder…" Command="{Binding InstallSkillCommand}" />
+            <Button Content="Open skills folder" Command="{Binding OpenSkillsFolderCommand}" />
+          </WrapPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+    <!-- 4 -->
+    <TabItem Header="Plugins">
+      <ScrollViewer DataContext="{Binding Control}" x:DataType="vm:ControlViewModel">
+        <StackPanel Classes="page">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Reload" Command="{Binding ReloadPluginsCommand}" Margin="0" />
+            <TextBlock Text="Plugins" Classes="pageTitle" VerticalAlignment="Center" />
+          </DockPanel>
+          <TextBlock Text="Loading plugins…" Classes="muted" IsVisible="{Binding PluginsLoading}" />
+          <TextBlock Text="Installed" Classes="h2" />
+          <Border Classes="pane">
+            <ItemsControl ItemsSource="{Binding InstalledPlugins}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:PluginVM">
+                  <Border BorderBrush="{DynamicResource LineSoft}" BorderThickness="0,0,0,1" Padding="12,6">
+                    <DockPanel>
+                      <Button DockPanel.Dock="Right" Classes="danger" Content="Uninstall" IsVisible="{Binding CanUninstall}" Margin="8,0,0,0" VerticalAlignment="Center"
+                              Command="{ReflectionBinding $parent[UserControl].DataContext.Control.UninstallPluginCommand}" CommandParameter="{Binding}" />
+                      <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding Enabled}" OnContent="" OffContent="" AutomationProperties.Name="{Binding Name}" />
+                      <StackPanel>
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Meta}" Classes="faint" />
+                      </StackPanel>
+                    </DockPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+          <TextBlock Text="Marketplace" Classes="h2" Margin="0,8,0,0" />
+          <TextBox Text="{Binding MarketFilter}" Watermark="Search the marketplace…" AutomationProperties.Name="Search plugins" />
+          <ItemsControl ItemsSource="{Binding Market}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:PluginVM">
+                <Border Classes="row">
+                  <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Install" VerticalAlignment="Top" Margin="8,0,0,0"
+                            Command="{ReflectionBinding $parent[UserControl].DataContext.Control.InstallPluginCommand}" CommandParameter="{Binding}" />
+                    <StackPanel>
+                      <TextBlock Text="{Binding Row.Name}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding Description}" Classes="muted wrap" MaxHeight="34" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Description}" />
+                    </StackPanel>
+                  </DockPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Text="{Binding MarketNote}" Classes="faint" />
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+    <!-- 5 -->
+    <TabItem Header="MCP servers">
+      <ScrollViewer DataContext="{Binding Control}" x:DataType="vm:ControlViewModel">
+        <StackPanel Classes="page">
+          <TextBlock Text="MCP servers" Classes="pageTitle" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Check MCP servers" Command="{Binding CheckMcpCommand}" />
+            <ProgressBar IsIndeterminate="True" Width="60" IsVisible="{Binding McpLoading}" VerticalAlignment="Center" Margin="0,0,0,6" />
+          </StackPanel>
+          <ItemsControl ItemsSource="{Binding McpLines}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:McpLineVM">
+                <DockPanel Margin="0,0,0,6">
+                  <Button DockPanel.Dock="Right" Classes="danger" Content="Remove" IsVisible="{Binding IsServer}" Margin="8,0,0,0" VerticalAlignment="Top"
+                          Command="{ReflectionBinding $parent[UserControl].DataContext.Control.RemoveMcpCommand}" CommandParameter="{Binding}" />
+                  <TextBlock Text="{Binding Text}" Classes="mono wrap" Foreground="{Binding Brush}" />
+                </DockPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Text="Add a server" Classes="h2" Margin="0,8,0,0" />
+          <TextBox Text="{Binding McpName}" Watermark="name, e.g. github" AutomationProperties.Name="MCP server name" />
+          <ContentControl Content="{Binding McpTransport}" ContentTemplate="{StaticResource PickerTemplate}" />
+          <TextBox Text="{Binding McpTarget}" Watermark="command (e.g. npx) or URL" AutomationProperties.Name="Command or URL" />
+          <TextBox Text="{Binding McpArgs}" Watermark="arguments, separated by spaces (commands only)" AutomationProperties.Name="Arguments" />
+          <ContentControl Content="{Binding McpScope}" ContentTemplate="{StaticResource PickerTemplate}" />
+          <Button Content="Add server" Command="{Binding AddMcpCommand}" HorizontalAlignment="Left" />
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+    <!-- 6 -->
+    <TabItem Header="Presets">
+      <ScrollViewer DataContext="{Binding Control}" x:DataType="vm:ControlViewModel">
+        <StackPanel Classes="page">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Edit presets file" Command="{Binding EditPresetsCommand}" Margin="0" />
+            <TextBlock Text="Presets" Classes="pageTitle" VerticalAlignment="Center" />
+          </DockPanel>
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Left" Text="Start in" VerticalAlignment="Center" Margin="0,0,10,0" />
+            <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseFolderCommand}" Margin="8,0,0,0" />
+            <ComboBox ItemsSource="{Binding RecentFolders}" SelectedItem="{Binding LaunchFolder}" Classes.private="{ReflectionBinding $parent[Window].DataContext.Redact}" HorizontalAlignment="Stretch" FontFamily="{StaticResource MonoFont}"
+                      AutomationProperties.Name="Folder to start in" />
+          </DockPanel>
+          <Border Classes="pane">
+            <ItemsControl ItemsSource="{Binding Presets}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:PresetVM">
+                  <Border BorderBrush="{DynamicResource LineSoft}" BorderThickness="0,0,0,1" Padding="12,8">
+                    <DockPanel>
+                      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="Make default" IsVisible="{Binding CanMakeDefault}" Margin="8,0,0,0"
+                                Command="{ReflectionBinding $parent[UserControl].DataContext.Control.ApplyPresetCommand}" CommandParameter="{Binding}" />
+                        <Button Classes="primary" Content="Start" Margin="8,0,0,0"
+                                Command="{ReflectionBinding $parent[UserControl].DataContext.Control.LaunchPresetCommand}" CommandParameter="{Binding}" />
+                      </StackPanel>
+                      <StackPanel>
+                        <TextBlock Text="{Binding Preset.Name}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Preset.Description}" Classes="faint" />
+                        <TextBlock Text="{Binding Flags}" Classes="mono" Foreground="{DynamicResource Muted}" />
+                      </StackPanel>
+                    </DockPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+          <TextBlock Text="Start opens a terminal in the folder above. Make default copies the preset's model, effort and mode into your settings." Classes="faint wrap" />
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+    <!-- 7 -->
+    <TabItem Header="Notifications and window">
+      <ScrollViewer DataContext="{Binding Control}" x:DataType="vm:ControlViewModel">
+        <StackPanel Classes="page">
+          <TextBlock Text="Notifications and window" Classes="pageTitle" />
+          <TextBlock Text="Notify me" Classes="h2" />
+          <CheckBox IsChecked="{Binding NotifyOnPermission}" Content="When Claude needs my OK" />
+          <CheckBox IsChecked="{Binding NotifyOnFinish}" Content="When Claude finishes and waits for me" />
+          <CheckBox IsChecked="{Binding NotifyOnErrors}" Content="When tools keep failing" />
+          <Button Content="Send a test notification" Command="{Binding TestNotificationCommand}" HorizontalAlignment="Left" />
+          <TextBlock Text="Warn me when" Classes="h2" Margin="0,8,0,0" />
+          <Grid ColumnDefinitions="*,140" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Text="A session's context is this full (%)" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="1" Value="{Binding ContextAlert}" Minimum="30" Maximum="99" Increment="5" FormatString="0" Margin="0,0,0,6" AutomationProperties.Name="Context warning percent" />
+            <TextBlock Grid.Row="1" Text="A plan limit is this used (%)" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding LimitAlert}" Minimum="30" Maximum="99" Increment="5" FormatString="0" Margin="0,0,0,6" AutomationProperties.Name="Limit warning percent" />
+            <TextBlock Grid.Row="2" Text="I pass my own 5-hour token budget (used without the status line; 0 = off)" Classes="wrap" VerticalAlignment="Center" Margin="0,0,10,0" />
+            <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding FiveHourBudget}" Minimum="0" Increment="100000" FormatString="0" AutomationProperties.Name="Five hour token budget" />
+          </Grid>
+          <TextBlock Text="Window" Classes="h2" Margin="0,8,0,0" />
+          <CheckBox IsChecked="{Binding CloseToTray}" Content="Closing the window keeps Overseer running in the tray" />
+          <CheckBox IsChecked="{Binding StartMinimized}" Content="Start in the tray" />
+          <CheckBox IsChecked="{Binding LoadExtensions}" Content="Load extensions from ~/.overseer/plugins (experimental; they run with your permissions)" />
+          <ContentControl Content="{Binding Theme}" ContentTemplate="{StaticResource PickerTemplate}" />
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+    <!-- 8 -->
+    <TabItem Header="Privacy and backups">
+      <ScrollViewer>
+        <StackPanel Classes="page">
+          <TextBlock Text="Privacy and backups" Classes="pageTitle" />
+          <TextBlock Classes="wrap" Text="Overseer runs only on this computer. It reads your Claude Code folder (~/.claude) but never your credentials, and sends nothing anywhere: no telemetry, no account." />
+          <TextBlock Classes="wrap" Text="It writes only when you change something here: ~/.claude/settings.json (with a backup made before its first change), and with live data on, small event and status files in ~/.overseer." />
+          <Border Classes="row">
+            <DockPanel>
+              <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding Redact}" OnContent="" OffContent="" AutomationProperties.Name="Hide private info" />
+              <StackPanel>
+                <TextBlock Text="Hide private info" FontWeight="SemiBold" />
+                <TextBlock Classes="faint wrap" Text="For screenshots and screen sharing: hides session titles, your prompts, commands, file paths, project names and emails everywhere in Overseer. Ctrl+Shift+H." />
+              </StackPanel>
+            </DockPanel>
+          </Border>
+          <WrapPanel>
+            <Button Content="Restore settings from backup…" Command="{Binding Control.RestoreBackupCommand}" />
+            <Button Content="Open settings.json" Command="{Binding Control.OpenSettingsCommand}" />
+            <Button Content="Open Overseer's folder" Command="{Binding Control.OpenOverseerFolderCommand}" />
+          </WrapPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+    <!-- 9 -->
+    <TabItem Header="Rules, hooks and files">
+      <views:ConfigureView DataContext="{Binding Configure}" />
+    </TabItem>
+  </TabControl>
+</UserControl>

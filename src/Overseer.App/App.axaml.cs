@@ -6,6 +6,7 @@ using Avalonia.Platform;
 using Avalonia.Styling;
 using Overseer.App.ViewModels;
 using Overseer.App.Views;
+using Overseer.Core;
 
 namespace Overseer.App;
 
@@ -31,6 +32,12 @@ public partial class App : Application
             vm.TrayStateChanged += SetTrayState;
             vm.ToggleMiniRequested += ToggleMini;
             vm.QuitRequested += () => Quit(desktop);
+            vm.ShowMainRequested += ShowMain;
+            vm.HideWindowRequested += () =>
+            {
+                window.Hide();
+                Notifier.Show("Overseer is still running", "It's in the tray and will tell you when a session needs you.");
+            };
             window.Closing += (_, e) =>
             {
                 if (vm.Config.CloseToTray && !quitting) { e.Cancel = true; window.Hide(); }
@@ -52,14 +59,14 @@ public partial class App : Application
     }
 
     void ApplyTheme(string theme) =>
-        RequestedThemeVariant = theme switch { "light" => ThemeVariant.Light, "system" => ThemeVariant.Default, _ => ThemeVariant.Dark };
+        RequestedThemeVariant = theme switch { "light" => ThemeVariant.Light, "dark" => ThemeVariant.Dark, _ => ThemeVariant.Default };
 
     void CreateTray(IClassicDesktopStyleApplicationLifetime desktop)
     {
         var menu = new NativeMenu();
         var open = new NativeMenuItem("Open Overseer");
         open.Click += (_, _) => ShowMain();
-        var miniItem = new NativeMenuItem("Mini mode");
+        var miniItem = new NativeMenuItem("Mini window");
         miniItem.Click += (_, _) => ToggleMini();
         var quit = new NativeMenuItem("Quit");
         quit.Click += (_, _) => Quit(desktop);

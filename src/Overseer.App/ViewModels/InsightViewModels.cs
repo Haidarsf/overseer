@@ -8,74 +8,108 @@ using Overseer.Core;
 
 namespace Overseer.App.ViewModels;
 
-public sealed record StatCardVM(string Title, string Icon, string IconKey, string Big, string Unit, string Line1, string Line2, List<ColumnVM> Spark, string? Tip)
-{
-    public Geometry? IconGeometry => Res.Icon(Icon);
-    public IBrush IconBrush => Res.Brush(IconKey);
-    public IBrush IconBg => Res.Tint(IconKey, 0x26);
-}
-
-public sealed record LimitVM(string Title, double Fraction, string Percent, string Resets, IBrush Brush);
+public sealed record UsedByVM(string Name, string Share, double Fraction);
 
 // ================= Overview =================
 public sealed partial class OverviewViewModel : ObservableObject
 {
     readonly MainViewModel main;
-    public OverviewViewModel(MainViewModel main) => this.main = main;
+    public OverviewViewModel(MainViewModel main)
+    {
+        this.main = main;
+        window = Options.Pick(Windows, main.Config.UsageWindow) ?? Windows[0];
+    }
 
-    [ObservableProperty] List<StatCardVM> cards = new();
-    [ObservableProperty] List<LimitVM> limits = new();
-    [ObservableProperty] bool hasLimits;
-    [ObservableProperty] string limitsNote = "";
+    public Option[] Windows { get; } = Options.Of(("5 hours", "5h"), ("This week", "week"));
+    [ObservableProperty] Option window;
+
+    // plan usage dial
+    [ObservableProperty] double usageFraction;
+    [ObservableProperty] string usagePercent = "";
+    [ObservableProperty] string usageLabel = "";
+    [ObservableProperty] string usageReset = "";
+    [ObservableProperty] string usageNote = "";
+    [ObservableProperty] IBrush usageBrush = Brushes.Gray;
+    [ObservableProperty] List<UsedByVM> usedBy = new();
+    [ObservableProperty] string usedByTitle = "";
+
+    // activity
     [ObservableProperty] List<ColumnVM> hours = new();
-    [ObservableProperty] string hoursTotal = "";
-    [ObservableProperty] string hoursPeak = "";
+    [ObservableProperty] string todayLine = "";
     [ObservableProperty] List<BarVM> models = new();
     [ObservableProperty] List<BarVM> tools = new();
-    [ObservableProperty] List<BarVM> mcp = new();
     [ObservableProperty] List<BarVM> skills = new();
-    [ObservableProperty] List<ChipVM> installedSkills = new();
-    [ObservableProperty] string installedSkillsTitle = "";
+
+    /// <summary>One line for the mini window: "46% of your 5 hours · resets 18:09".</summary>
+    public string MiniLine => UsagePercent + " " + UsageLabel + (UsageReset.Length > 0 ? " · " + UsageReset : "");
+
+    partial void OnWindowChanged(Option value)
+    {
+        main.Config.UsageWindow = value.Value ?? "5h";
+        main.Config.Save();
+        UpdateUsage();
+    }
+
+    /// <summary>The dial and its "used by" list. Cheap, so it also runs while the overview isn't showing (the mini window uses it).</summary>
+    public void UpdateUsage()
+    {
+        var now = DateTime.Now;
+        var week = Window.Value == "week";
+        var from = week ? now.AddDays(-7) : now.AddHours(-5);
+        var lim = main.Store.LatestLimits();
+        double? pct = week ? lim?.WeeklyUsedPercent : lim?.FiveHourUsedPercent;
+        DateTime? resets = week ? lim?.WeeklyResetsAt : lim?.FiveHourResetsAt;
+        var usage = main.Store.AllUsage().Where(u => u.Time > from).ToList();
+
+        if (pct is { } p)
+        {
+            UsageFraction = p / 100;
+            UsagePercent = Math.Round(p).ToString(CultureInfo.InvariantCulture) + "%";
+            UsageLabel = week ? "of this week" : "of your 5 hours";
+            UsageReset = resets is { } r ? "resets " + (r.Date == now.Date ? "today at " + r.ToString("HH:mm", CultureInfo.InvariantCulture) : r.ToString("dddd 'at' HH:mm", CultureInfo.InvariantCulture)) : "";
+            UsageNote = "Exact, from Claude Code's status line " + Text.Ago(lim!.Updated) + ".";
+            UsageBrush = Res.Brush(p >= 90 ? "Red" : p >= 70 ? "Accent" : week ? "Green" : "Fg");
+        }
+        else
+        {
+            var budget = week ? main.Config.WeeklyTokenBudget : main.Config.FiveHourTokenBudget;
+            var used = usage.Sum(u => u.Billable);
+            UsageFraction = budget > 0 ? Math.Min(1, (double)used / budget) : 0;
+            UsagePercent = Text.Tokens(used);
+            UsageLabel = week ? "tokens this week" : "tokens in 5 hours";
+            UsageReset = budget > 0 ? Math.Round(100.0 * used / budget) + "% of your own budget" : "";
+            UsageNote = "Your exact plan limits show here once the status line is on (Settings → Live data). It only runs in terminal sessions.";
+            UsageBrush = Res.Brush(week ? "Green" : "Fg");
+        }
+
+        // which sessions used it: share of tokens in the window (subagents count toward their parent)
+        var all = main.Store.All.ToList();
+        string Parent(string id)
+        {
+            var s = all.FirstOrDefault(x => x.Id == id);
+            return s is { IsSubagent: true, ParentId: { } pid } ? pid : id;
+        }
+        var top = main.Store.TopLevel().ToDictionary(s => s.Id);
+        var groups = usage.GroupBy(u => Parent(u.SessionId)).Select(g => (Id: g.Key, Tokens: g.Sum(u => u.Billable))).Where(g => g.Tokens > 0).ToList();
+        if (main.HideDone) groups = groups.Where(g => top.TryGetValue(g.Id, out var s) && !Res.IsDone(s.State)).ToList();
+        var total = Math.Max(1, groups.Sum(g => g.Tokens));
+        UsedBy = groups.OrderByDescending(g => g.Tokens).Take(6).Select(g =>
+        {
+            var name = top.TryGetValue(g.Id, out var s) ? Redactor.Title(s.Title, s.Id) : "Other sessions";
+            var f = (double)g.Tokens / total;
+            return new UsedByVM(name, Math.Round(f * 100).ToString(CultureInfo.InvariantCulture) + "%", f);
+        }).ToList();
+        UsedByTitle = UsedBy.Count == 0 ? "No Claude use in this window yet." : "Used by (share of tokens in this window)";
+        OnPropertyChanged(nameof(MiniLine));
+    }
 
     public void Update()
     {
+        UpdateUsage();
         var now = DateTime.Now;
         var all = main.Store.AllUsage();
-        var h5 = all.Where(u => u.Time > now.AddHours(-5)).ToList();
-        var d7 = all.Where(u => u.Time > now.AddDays(-7)).ToList();
         var today = all.Where(u => u.Time.Date == now.Date).ToList();
-        var top = main.Store.TopLevel();
-
-        List<ColumnVM> Spark(long[] v, string key)
-        {
-            var mx = Math.Max(1, v.Max());
-            return v.Select((x, i) => new ColumnVM(x == 0 ? 3 : Math.Max(5, 32.0 * x / mx), i == v.Length - 1 ? Res.Brush(key) : Res.Tint(key, 0x90), Text.Tokens(x) + " tokens", null)).ToList();
-        }
-
-        var ages = h5.Count > 0 ? "oldest call ages out in " + Text.Duration(h5.Min(u => u.Time).AddHours(5) - now) : "no calls in this window";
-        int live = top.Count(s => s.IsLive), working = top.Count(s => s.State == SessionState.Working);
-        Cards = new()
-        {
-            new("Last 5 hours", "Clock", "Accent", Text.Tokens(h5.Sum(u => u.Billable)), "tokens · excl. cache reads", $"{h5.Count} model calls", ages,
-                Spark(Reports.Buckets(all, now.AddHours(-5), TimeSpan.FromMinutes(30), 10), "Accent"), "Rolling 5-hour window, the span Claude's session limits use."),
-            new("Today", "Chart", "Blue", Text.Tokens(today.Sum(u => u.Billable)), "tokens · excl. cache reads", $"{today.Count} model calls", Text.Tokens(today.Sum(u => u.Output)) + " output tokens",
-                Spark(Reports.Buckets(all, now.Date, TimeSpan.FromHours(1), Math.Max(1, now.Hour + 1)), "Blue"), null),
-            new("Last 7 days", "Chart", "Purple", Text.Tokens(d7.Sum(u => u.Billable)), "tokens · excl. cache reads", $"{d7.Count} model calls", d7.Select(u => u.SessionId).Distinct().Count() + " sessions",
-                Spark(Reports.Buckets(all, now.Date.AddDays(-6), TimeSpan.FromDays(1), 7), "Purple"), "Rolling 7-day window, the span Claude's weekly limits use."),
-            new("Right now", "Pulse", "Green", live.ToString(CultureInfo.InvariantCulture), "live sessions", $"{working} working · {live - working} idle", top.Count + " sessions on disk", new(), null),
-        };
-
-        var lim = main.Store.LatestLimits();
-        HasLimits = lim != null;
-        if (lim != null)
-        {
-            LimitVM L(string t, double? pct, DateTime? resets) =>
-                new(t, (pct ?? 0) / 100, Math.Round(pct ?? 0) + "%", resets is { } r ? "resets " + r.ToString(r.Date == now.Date ? "HH:mm" : "ddd HH:mm", CultureInfo.InvariantCulture) : "",
-                    Res.Brush((pct ?? 0) >= 90 ? "Red" : (pct ?? 0) >= 70 ? "Yellow" : "Accent"));
-            Limits = new() { L("5-hour limit", lim.FiveHourUsedPercent, lim.FiveHourResetsAt), L("Weekly limit", lim.WeeklyUsedPercent, lim.WeeklyResetsAt) };
-            LimitsNote = "Exact, reported by Claude Code's status line " + Text.Ago(lim.Updated) + ".";
-        }
-        else LimitsNote = "Your exact plan limits appear here once Overseer's status line is on (Control → Live data). It only runs in terminal sessions.";
+        var d7 = all.Where(u => u.Time > now.AddDays(-7)).ToList();
 
         var start = new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0).AddHours(-23);
         var buckets = new long[24]; var calls = new int[24];
@@ -87,26 +121,24 @@ public sealed partial class OverviewViewModel : ObservableObject
             buckets[i] += u.Billable; calls[i]++;
         }
         var mx = Math.Max(1, buckets.Max());
-        Hours = buckets.Select((b, i) => new ColumnVM(b == 0 ? 3 : Math.Max(6, 150.0 * b / mx),
-            b == 0 ? Res.Brush("Line") : i == 23 ? Res.Brush("Accent2") : Res.Brush("Accent"),
-            $"{start.AddHours(i):HH}:00 – {start.AddHours(i + 1):HH}:00\n{Text.Tokens(b)} tokens · {calls[i]} model calls",
-            i == 23 ? "now" : i % 3 == 2 ? start.AddHours(i).ToString("HH:00", CultureInfo.InvariantCulture) : null)).ToList();
-        HoursTotal = Text.Tokens(buckets.Sum());
-        HoursPeak = "peak " + Text.Tokens(mx) + "/h";
+        Hours = buckets.Select((b, i) => new ColumnVM(b == 0 ? 2 : Math.Max(4, 84.0 * b / mx),
+            b == 0 ? Res.Brush("Track") : Res.Brush("WorkDot"),
+            $"{start.AddHours(i):HH}:00 – {start.AddHours(i + 1):HH}:00\n{Text.Tokens(b)} new tokens · {calls[i]} model calls",
+            i == 23 ? "now" : i % 6 == 5 ? start.AddHours(i).ToString("HH:00", CultureInfo.InvariantCulture) : null)).ToList();
 
-        Models = BarVM.From(d7.GroupBy(u => Text.PrettyModel(u.Model)).Select(g => new KeyValuePair<string, long>(g.Key, g.Count())), "Accent", 8);
-        var tools = new Dictionary<string, long>(); var mcp = new Dictionary<string, long>(); var skills = new Dictionary<string, long>();
+        var cost = today.Sum(main.Prices.Cost);
+        TodayLine = $"Today: {Text.Tokens(today.Sum(u => u.Billable))} new tokens (input and output, not counting cached context re-read on each turn) · {today.Count} model calls"
+            + (cost > 0 ? " · about $" + cost.ToString("0.00", CultureInfo.InvariantCulture) + " at API prices" : "");
+
+        Models = BarVM.From(d7.GroupBy(u => Text.PrettyModel(u.Model)).Select(g => new KeyValuePair<string, long>(g.Key, g.Count())), "Fg2", 6);
+        var tools = new Dictionary<string, long>(); var skills = new Dictionary<string, long>();
         foreach (var s in main.Store.All.Where(x => x.Last > now.AddDays(-7)))
         {
             foreach (var kv in s.Tools) tools[kv.Key] = tools.GetValueOrDefault(kv.Key) + kv.Value;
-            foreach (var kv in s.Mcp) mcp[kv.Key] = mcp.GetValueOrDefault(kv.Key) + kv.Value;
             foreach (var kv in s.Skills) skills[kv.Key] = skills.GetValueOrDefault(kv.Key) + kv.Value;
         }
-        Tools = BarVM.From(tools, "Blue", 14, true, Core.Tools.Label);
-        Mcp = BarVM.From(mcp, "Purple", 10);
-        Skills = BarVM.From(skills, "Accent2", 10);
-        InstalledSkills = main.Store.InstalledSkills.Select(x => new ChipVM(x.Name, Res.Brush(x.Source == "personal" ? "Green" : "Fg2"), Res.Icon("Bolt"), x.Description)).ToList();
-        InstalledSkillsTitle = "Installed skills · " + InstalledSkills.Count;
+        Tools = BarVM.From(tools, "WorkDot", 8, false, Core.Tools.Label);
+        Skills = BarVM.From(skills, "Accent", 8);
     }
 }
 

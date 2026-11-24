@@ -16,7 +16,7 @@ public static class SettingsFile
 {
     static readonly object WriteLock = new();
     static readonly HashSet<string> backedUp = new(StringComparer.OrdinalIgnoreCase);
-    static readonly JsonSerializerOptions Pretty = new()
+    internal static readonly JsonSerializerOptions Pretty = new()
     {
         WriteIndented = true,
         TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver(),

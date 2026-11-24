@@ -13,11 +13,15 @@ public sealed partial class PickerVM : ObservableObject
 {
     readonly Func<string?, ActionResult>? write;
     readonly Action<ActionResult>? report;
+    readonly Action<ActionResult, Action>? reportWithUndo;
     bool loading;
+    string? current;
 
-    public PickerVM(string label, Option[] options, string? current, Func<string?, ActionResult>? write, Action<ActionResult>? report, string? hint = null)
+    public PickerVM(string label, Option[] options, string? current, Func<string?, ActionResult>? write, Action<ActionResult>? report, string? hint = null,
+        Action<ActionResult, Action>? reportWithUndo = null)
     {
-        Label = label; Items = options; this.write = write; this.report = report; Hint = hint;
+        Label = label; Items = options; this.write = write; this.report = report; this.reportWithUndo = reportWithUndo; Hint = hint;
+        this.current = current;
         loading = true;
         selected = Options.Pick(options, current);
         loading = false;
@@ -33,19 +37,38 @@ public sealed partial class PickerVM : ObservableObject
     partial void OnSelectedChanged(Option? value)
     {
         if (loading || value == null || write == null) return;
-        report?.Invoke(write(value.Value));
+        var prev = current;
+        if (string.Equals(prev, value.Value, StringComparison.OrdinalIgnoreCase)) return;
+        var r = write(value.Value);
+        if (r.Ok) current = value.Value;
+        if (r.Ok && reportWithUndo != null)
+            reportWithUndo(r, () =>
+            {
+                var back = write(prev);
+                if (back.Ok) { current = prev; loading = true; Selected = Options.Pick(Items, prev); loading = false; }
+                report?.Invoke(back.Ok ? ActionResult.Good("Changed back.") : back);
+            });
+        else report?.Invoke(r);
     }
 }
 
-public sealed record PresetVM(Preset Preset, string Summary);
+public sealed record PresetVM(Preset Preset, string Summary, string Flags, bool IsYourDefaults)
+{
+    public bool CanMakeDefault => !IsYourDefaults;
+}
 
 public sealed partial class SkillRowVM : ObservableObject
 {
     public SkillRowVM(SkillInfo info, string state, Action<ActionResult> report)
     {
         Name = info.Name; Description = info.Description ?? ""; IsPersonal = info.Source == "personal";
-        Picker = new PickerVM("", Options.Of(("On", "on"), ("Name only", "name-only"), ("Manual", "user-invocable-only"), ("Off", "off")), state,
-            v => SettingsFile.SetSkillState(info.Name, v ?? "on"), report);
+        Picker = new PickerVM("", Options.Of(("On", "on"), ("Name only", "name-only"), ("Only via /command", "user-invocable-only"), ("Off", "off")), state,
+            v =>
+            {
+                var r = SettingsFile.SetSkillState(info.Name, v ?? "on");
+                var label = v switch { "name-only" => "name only", "user-invocable-only" => "only via /" + info.Name, "off" => "off", _ => "on" };
+                return r.Ok ? ActionResult.Good($"{info.Name}: {label} in new sessions.") : r;
+            }, report);
     }
     public string Name { get; }
     public string Description { get; }
@@ -78,9 +101,23 @@ public sealed partial class ControlViewModel : ObservableObject
     readonly MainViewModel main;
     public ControlViewModel(MainViewModel main) => this.main = main;
 
-    static readonly Option[] ModelOpts = Options.Of(("Default", null), ("Fable", "fable"), ("Opus", "opus"), ("Sonnet", "sonnet"), ("Haiku", "haiku"), ("Opus Plan", "opusplan"));
-    static readonly Option[] EffortOpts = Options.Of(("Auto", null), ("Low", "low"), ("Medium", "medium"), ("High", "high"), ("X-High", "xhigh"));
-    static readonly Option[] ModeOpts = Options.Of(("Ask first", null), ("Accept edits", "acceptEdits"), ("Plan", "plan"), ("Auto", "auto"), ("Don't ask", "dontAsk"));
+    static readonly Option[] ModelOpts = Options.Described(
+        ("Plan default", null, "whatever your plan picks"), ("Fable", "fable", "most capable"), ("Opus", "opus", "deep, long work"),
+        ("Sonnet", "sonnet", "everyday all-rounder"), ("Haiku", "haiku", "quick and light"), ("Opus plan mode", "opusplan", "Opus plans, Sonnet does the work"));
+    static readonly Option[] EffortOpts = Options.Of(("Model default", null), ("Low", "low"), ("Medium", "medium"), ("High", "high"), ("Extra high", "xhigh"));
+    static readonly Option[] ModeOpts = Options.Described(
+        ("Ask first", null, "Claude asks before each action that needs permission"),
+        ("Accept edits", "acceptEdits", "File edits go ahead; commands still ask"),
+        ("Plan", "plan", "Claude plans and changes nothing"),
+        ("Auto", "auto", "Claude Code's safety classifier decides what runs without asking"),
+        ("Don't ask", "dontAsk", "Only tools you've already allowed run; everything else is refused"));
+    public static readonly Option[] WaitOpts = Options.Of(("30 s", "30"), ("1 min", "60"), ("2 min", "120"), ("5 min", "300"));
+
+    /// <summary>Which settings section is showing (0 = model and effort … see SettingsView).</summary>
+    [ObservableProperty] int tab;
+    [ObservableProperty] bool answerPrompts;
+    [ObservableProperty] PickerVM? waitPicker;
+    [ObservableProperty] string overrides = "";
 
     // defaults
     [ObservableProperty] PickerVM? model;
@@ -143,7 +180,8 @@ public sealed partial class ControlViewModel : ObservableObject
         loading = true;
         var settings = SettingsFile.Read() ?? new JsonObject();
         var cur = SettingsFile.GetString("model");
-        Model = new PickerVM("", ModelOpts, cur, v => SettingsFile.SetString(v, "model"), Report);
+        Model = new PickerVM("", ModelOpts, cur, v => Say(SettingsFile.SetString(v, "model"),
+            $"New sessions will start on {Options.Pick(ModelOpts, v)?.Label ?? v}. Running sessions keep their model."), Report, null, ReportUndo);
         var known = ModelOpts.Any(o => string.Equals(o.Value, cur, StringComparison.OrdinalIgnoreCase));
         CustomModelNote = !known && cur != null ? "Currently set to a custom model: " + cur : "";
         if (!known && cur != null && CustomModel.Length == 0) CustomModel = cur;
@@ -151,23 +189,40 @@ public sealed partial class ControlViewModel : ObservableObject
         var ids = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
         if (settings["modelSettings"] is JsonObject ms) foreach (var kv in ms) ids.Add(kv.Key);
         foreach (var s in main.Store.All) if (s.Model?.StartsWith("claude-", StringComparison.Ordinal) == true) ids.Add(s.Model.Replace("[1m]", ""));
+        string EffortWord(string? v) => (Options.Pick(EffortOpts, v)?.Label ?? v ?? "default").ToLowerInvariant();
         var eff = ids.Select(id => new PickerVM($"{Text.PrettyModel(id)} · {id}", EffortOpts, SettingsFile.GetString("modelSettings", id, "effortLevel"),
-            v => SettingsFile.SetString(v, "modelSettings", id, "effortLevel"), Report)).ToList();
-        eff.Add(new PickerVM("All other models", EffortOpts, SettingsFile.GetString("effortLevel"), v => SettingsFile.SetString(v, "effortLevel"), Report));
+            v => Say(SettingsFile.SetString(v, "modelSettings", id, "effortLevel"), $"New {Text.PrettyModel(id)} sessions will use {EffortWord(v)} effort."), Report, null, ReportUndo)).ToList();
+        eff.Add(new PickerVM("Every other model", EffortOpts, SettingsFile.GetString("effortLevel"),
+            v => Say(SettingsFile.SetString(v, "effortLevel"), $"Other models will use {EffortWord(v)} effort in new sessions."), Report, null, ReportUndo));
         Efforts = eff;
 
         var mode = SettingsFile.GetString("permissions", "defaultMode");
         BypassWarning = mode == "bypassPermissions";
-        PermissionMode = new PickerVM("", ModeOpts, mode is "default" or "manual" ? null : mode, v => SettingsFile.SetString(v, "permissions", "defaultMode"), Report);
+        PermissionMode = new PickerVM("", ModeOpts, mode is "default" or "manual" ? null : mode,
+            v => Say(SettingsFile.SetString(v, "permissions", "defaultMode"), $"New sessions will start in {Options.Pick(ModeOpts, v)?.Label ?? v} mode. Running sessions are unchanged."), Report, null, ReportUndo);
+        Overrides = ProjectOverrides();
         OutputStyle = new PickerVM("", Options.Of(("Default", null), ("Explanatory", "Explanatory"), ("Learning", "Learning")), SettingsFile.GetString("outputStyle"),
             v => SettingsFile.SetString(v, "outputStyle"), Report);
         Thinking = SettingsFile.GetBool("alwaysThinkingEnabled") != false;
         SpinnerTips = SettingsFile.GetBool("spinnerTipsEnabled") != false;
 
-        Presets = Core.Presets.Load().Select(p => new PresetVM(p, string.Join(" · ", new[] { p.Model, p.Effort, p.PermissionMode }.Where(x => x != null)))).ToList();
-        RecentFolders = main.Store.TopLevel().Where(s => s.Cwd != null && Directory.Exists(s.Cwd)).Select(s => s.Cwd!).Distinct().Take(5).ToList();
+        var presets = new List<PresetVM> { new(new Preset { Name = "Your defaults", Description = "The model, effort and permission mode set in this window" }, MainViewModel.DefaultsSummary(), "claude", true) };
+        presets.AddRange(Core.Presets.Load().Select(p => new PresetVM(p, string.Join(" · ", new[] { p.Model, p.Effort, p.PermissionMode }.Where(x => x != null)),
+            "claude " + string.Join(" ", ClaudeCli.SessionArgs(p.Model, p.Effort, p.PermissionMode, null)), false)));
+        Presets = presets;
+        RecentFolders = main.Store.TopLevel().Where(s => s.Cwd != null && Directory.Exists(s.Cwd)).Select(s => s.Cwd!).Distinct().Take(8).ToList();
+        if (RecentFolders.Count > 0 && LaunchFolder == Paths.Home) LaunchFolder = RecentFolders[0];
+        if (!RecentFolders.Contains(LaunchFolder)) RecentFolders = new List<string> { LaunchFolder }.Concat(RecentFolders).ToList();
 
         HooksOn = Integration.HooksInstalled();
+        AnswerPrompts = Integration.PermissionHookInstalled();
+        WaitPicker = new PickerVM("Wait for an answer here", WaitOpts, main.Config.PermissionWaitSeconds.ToString(CultureInfo.InvariantCulture), v =>
+        {
+            main.Config.PermissionWaitSeconds = int.Parse(v ?? "60", CultureInfo.InvariantCulture);
+            main.Config.Save();
+            var r = AnswerPrompts ? Integration.InstallPermissionHook(ExePath, main.Config.PermissionWaitSeconds) : ActionResult.Good("");
+            return r.Ok ? ActionResult.Good("Permission prompts will wait up to " + Options.Pick(WaitOpts, v)?.Label + " for an answer here.") : r;
+        }, Report);
         StatusLineOn = Integration.StatusLineInstalled();
         var sl = Integration.CurrentStatusLineCommand();
         ExistingStatusLine = sl != null && !StatusLineOn ? "You already have a status line: " + sl : "";
@@ -178,13 +233,45 @@ public sealed partial class ControlViewModel : ObservableObject
         NotifyOnFinish = c.NotifyOnFinish; NotifyOnPermission = c.NotifyOnPermission; NotifyOnErrors = c.NotifyOnErrors;
         CloseToTray = c.CloseToTray; StartMinimized = c.StartMinimized; LoadExtensions = c.LoadExtensions;
         ContextAlert = c.ContextAlertPercent; LimitAlert = c.LimitAlertPercent; FiveHourBudget = c.FiveHourTokenBudget;
-        Theme = new PickerVM("Theme", Options.Of(("Dark", "dark"), ("Light", "light"), ("System", "system")), c.Theme, v => { main.SetTheme(v ?? "dark"); return ActionResult.Good("Theme changed"); }, null);
+        Theme = new PickerVM("Theme", Options.Of(("Match the system", "system"), ("Light", "light"), ("Dark", "dark")), c.Theme, v => { main.SetTheme(v ?? "system"); return ActionResult.Good("Theme changed"); }, null);
         loading = false;
 
         if (allPlugins == null && !PluginsLoading) _ = LoadPlugins();
     }
 
-    void Report(ActionResult r) => main.Toast(r);
+    void Report(ActionResult r) { if (r.Message.Length > 0) main.Toast(r); }
+    void ReportUndo(ActionResult r, Action undo) { main.Toast(r.Message, r.Ok, () => { undo(); main.Refresh(); }); main.Refresh(); }
+    static ActionResult Say(ActionResult r, string message) => r.Ok ? ActionResult.Good(message) : r;
+
+    /// <summary>Projects (from your sessions) whose own settings override model or permission mode.</summary>
+    string ProjectOverrides()
+    {
+        var hits = new List<string>();
+        foreach (var dir in main.Store.TopLevel().Select(s => s.Cwd).Where(d => d != null).Distinct().Take(40))
+        {
+            var keys = new List<string>();
+            foreach (var f in new[] { Path.Combine(dir!, ".claude", "settings.json"), Path.Combine(dir!, ".claude", "settings.local.json") })
+            {
+                try
+                {
+                    if (!File.Exists(f) || JsonNode.Parse(File.ReadAllText(f)) is not JsonObject o) continue;
+                    if (o["model"] != null) keys.Add("model");
+                    if (o["permissions"]?["defaultMode"] != null) keys.Add("permission mode");
+                    if (o["effortLevel"] != null || o["modelSettings"] != null) keys.Add("effort");
+                }
+                catch { }
+            }
+            if (keys.Count > 0) hits.Add($"{Redactor.Name(PendingVM.FolderName(dir))} ({string.Join(", ", keys.Distinct())})");
+        }
+        return hits.Count == 0 ? "" : $"{hits.Count} project{(hits.Count == 1 ? "" : "s")} override{(hits.Count == 1 ? "s" : "")} something: " + string.Join(", ", hits) + ".";
+    }
+
+    partial void OnAnswerPromptsChanged(bool value)
+    {
+        if (loading) return;
+        Report(value ? Integration.InstallPermissionHook(ExePath, main.Config.PermissionWaitSeconds) : Integration.UninstallPermissionHook());
+        main.Refresh();
+    }
 
     // ---------- defaults ----------
     [RelayCommand]
@@ -200,6 +287,7 @@ public sealed partial class ControlViewModel : ObservableObject
     partial void OnSpinnerTipsChanged(bool value) { if (!loading) Report(SettingsFile.Set(value ? null : JsonValue.Create(false), "spinnerTipsEnabled")); }
 
     [RelayCommand] void OpenSettings() => ProcessControl.Open(SettingsFile.FilePath);
+    [RelayCommand] void GoRules() => Tab = 9;
 
     [RelayCommand]
     async Task RestoreBackup()
@@ -211,11 +299,14 @@ public sealed partial class ControlViewModel : ObservableObject
 
     // ---------- presets & launch ----------
     [RelayCommand]
-    void ApplyPreset(PresetVM p) { Report(Core.Presets.ApplyAsDefault(p.Preset)); Load(); }
+    void ApplyPreset(PresetVM p) { Report(Core.Presets.ApplyAsDefault(p.Preset)); Load(); main.Refresh(); }
 
     [RelayCommand]
-    void LaunchPreset(PresetVM p) =>
-        Report(Terminal.LaunchClaude(LaunchFolder, ClaudeCli.SessionArgs(p.Preset.Model, p.Preset.Effort, p.Preset.PermissionMode, LaunchName)));
+    void LaunchPreset(PresetVM p)
+    {
+        if (!Directory.Exists(LaunchFolder)) { main.Toast("That folder doesn't exist.", false); return; }
+        Report(Terminal.LaunchClaude(LaunchFolder, p.IsYourDefaults ? new List<string>() : ClaudeCli.SessionArgs(p.Preset.Model, p.Preset.Effort, p.Preset.PermissionMode, LaunchName)));
+    }
 
     [RelayCommand] void EditPresets() { Core.Presets.Save(Core.Presets.Load()); ProcessControl.Open(Paths.PresetsFile); }
 
@@ -223,7 +314,9 @@ public sealed partial class ControlViewModel : ObservableObject
     async Task BrowseFolder()
     {
         var f = await main.PickFolderAsync("Folder for the new Claude session");
-        if (f != null) LaunchFolder = f;
+        if (f == null) return;
+        if (!RecentFolders.Contains(f)) RecentFolders = new List<string> { f }.Concat(RecentFolders).ToList();
+        LaunchFolder = f;
     }
 
     [RelayCommand] void PickRecent(string folder) => LaunchFolder = folder;
@@ -242,6 +335,7 @@ public sealed partial class ControlViewModel : ObservableObject
     {
         if (loading) return;
         Report(value ? Integration.InstallHooks(ExePath) : Integration.UninstallHooks());
+        main.Refresh();
     }
 
     partial void OnStatusLineOnChanged(bool value)

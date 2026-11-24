@@ -28,7 +28,7 @@ public sealed class SessionCount : IOverseerExtension
 ```
 
 3. Build it and copy the DLL into `~/.overseer/plugins/`.
-4. In Overseer, turn on **Control → Overseer → Load extensions** and restart.
+4. In Overseer, turn on **Settings → Notifications and window → Load extensions** and restart.
 
 ## The host
 

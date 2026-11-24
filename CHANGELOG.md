@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Answer permission prompts from Overseer: allow once, always allow (this project or all projects, with "Remove rule" to undo) or deny with a note for Claude. Works from the overview, the "waiting for you" bell, the mini window and the keyboard (A / D). Uses an optional synchronous PermissionRequest hook (`Overseer permission`) that only waits while Overseer is open and falls back to the terminal.
+- Command palette (Ctrl+K), menu bar, keyboard shortcuts, and a new-session dialog that starts from your own defaults.
+- Plan usage dial with a 5 hours / this week switch and a "used by" breakdown per session.
+
+### Changed
+- Redesigned as a native-feeling desktop window in Claude's colours: own title bar with menus and the bell, sidebar, toolbar, status bar, flat panes, light and dark themes (following the system by default), and a new icon.
+- Settings (formerly Control and Configure) is one preferences window with sections; wording explains what applies to new sessions versus running ones.
+- "Redact mode" is now "Hide private info" and also hides session titles, commands and project names.
+- Toasts appear top right and offer Undo for settings changes.
+
+### Fixed
+- Stopping a session shows "Stopping…" until it has stopped.
+- "Hide done sessions" applies everywhere, not only to the sidebar.
+
 ## [0.2.0] - 2026-11-24
 
 ### Added

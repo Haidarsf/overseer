@@ -3,28 +3,47 @@
         xmlns:vm="using:Overseer.App.ViewModels"
         x:Class="Overseer.App.Views.MiniWindow"
         x:DataType="vm:MainViewModel"
-        Title="Overseer · live"
+        Title="Overseer mini"
         Icon="/Assets/overseer.ico"
-        Width="340" SizeToContent="Height" MaxHeight="600" CanResize="False" Topmost="True"
-        Background="{DynamicResource BgSide}">
-  <StackPanel Margin="12">
-    <DockPanel Margin="4,0,4,8">
-      <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Fill="{Binding StatusBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
-      <TextBlock Text="{Binding StatusText}" Classes="muted" />
+        Width="320" SizeToContent="Height" MaxHeight="640" CanResize="False" Topmost="True"
+        Background="{DynamicResource BgCard}">
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Escape" Command="{Binding ToggleMiniCommand}" />
+  </Window.KeyBindings>
+  <StackPanel Margin="10" Spacing="8">
+    <!-- plan usage, following the window picked on the overview -->
+    <DockPanel DataContext="{Binding Overview}" x:DataType="vm:OverviewViewModel">
+      <TextBlock DockPanel.Dock="Left" Text="{Binding UsagePercent}" FontFamily="{StaticResource SerifFont}" FontSize="22" Margin="0,0,8,0" VerticalAlignment="Center" />
+      <StackPanel VerticalAlignment="Center">
+        <TextBlock Text="{Binding UsageLabel}" FontSize="12" Foreground="{DynamicResource Muted}" />
+        <TextBlock Text="{Binding UsageReset}" FontSize="11.5" Foreground="{DynamicResource Muted}" Classes="trim" />
+      </StackPanel>
     </DockPanel>
-    <TextBlock Text="No live sessions." Classes="faint" Margin="4" IsVisible="{Binding !LiveSessions.Count}" />
+
+    <TextBlock IsVisible="{Binding NoLiveSessions}" Text="Nothing running. You'll get a notification when a session needs you." Classes="muted wrap" />
     <ItemsControl ItemsSource="{Binding LiveSessions}">
       <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="vm:SessionItemVM">
-          <Border Background="{DynamicResource BgCard}" CornerRadius="10" Padding="10,8" Margin="0,0,0,6" ToolTip.Tip="{Binding Tooltip}">
-            <Grid ColumnDefinitions="18,*,Auto">
-              <Ellipse Width="9" Height="9" Fill="{Binding StateBrush}" Classes.pulse="{Binding IsWorking}" VerticalAlignment="Center" />
-              <StackPanel Grid.Column="1">
-                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12.5" Classes="trim" />
-                <TextBlock Text="{Binding Subtitle}" Classes="faint trim" FontSize="11" />
+          <Border Background="{Binding RowBg}" BorderBrush="{DynamicResource LineSoft}" BorderThickness="1" CornerRadius="6" Padding="8,7" Margin="0,0,0,6">
+            <StackPanel Spacing="5">
+              <Button Classes="flat" Background="Transparent" Padding="0" MinHeight="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                      Command="{ReflectionBinding $parent[Window].DataContext.OpenFromMiniCommand}" CommandParameter="{Binding}" ToolTip.Tip="Open in the main window">
+                <StackPanel>
+                  <DockPanel>
+                    <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Fill="{Binding StateBrush}" Classes.pulse="{Binding NeedsYou}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding StateText}" FontSize="11.5" Foreground="{Binding StateInk}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Title}" FontSize="12.5" Classes="trim" />
+                  </DockPanel>
+                  <TextBlock Text="{Binding Note}" FontSize="12" Foreground="{DynamicResource Fg2}" Classes="trim" Margin="16,2,0,0" />
+                </StackPanel>
+              </Button>
+              <Panel IsVisible="{Binding HasPending}">
+              <StackPanel Orientation="Horizontal" Margin="16,0,0,0" DataContext="{Binding Pending}" x:DataType="vm:PendingVM">
+                <Button Classes="primary" Content="Allow once" Command="{ReflectionBinding $parent[Window].DataContext.AllowOnceCommand}" CommandParameter="{Binding}" Margin="0,0,6,0" />
+                <Button Content="Deny…" Command="{ReflectionBinding $parent[Window].DataContext.DenyWithNoteCommand}" CommandParameter="{Binding}" Margin="0" />
               </StackPanel>
-              <TextBlock Grid.Column="2" Text="{Binding StateText}" Foreground="{Binding StateBrush}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="8,0,0,0" />
-            </Grid>
+              </Panel>
+            </StackPanel>
           </Border>
         </DataTemplate>
       </ItemsControl.ItemTemplate>

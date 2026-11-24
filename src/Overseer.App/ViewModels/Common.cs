@@ -28,23 +28,34 @@ public static class Res
         return app != null && app.TryGetResource("Icon." + key, null, out var v) ? v as Geometry : null;
     }
 
+    /// <summary>Dot colour per state: clay = needs you, sky = working, olive = your turn, gray = done.</summary>
     public static string StateKey(SessionState s) => s switch
     {
-        SessionState.Working => "Accent",
-        SessionState.NeedsPermission => "Yellow",
+        SessionState.Working => "WorkDot",
+        SessionState.NeedsPermission => "Accent",
         SessionState.Idle => "Green",
-        SessionState.Active => "Blue",
-        _ => "Faint",
+        _ => "DoneDot",
+    };
+
+    /// <summary>Text colour per state (readable on the panel background).</summary>
+    public static string StateInkKey(SessionState s) => s switch
+    {
+        SessionState.Working => "WorkFg",
+        SessionState.NeedsPermission => "NeedFg",
+        SessionState.Idle => "Green",
+        _ => "Muted",
     };
 
     public static string StateText(SessionState s) => s switch
     {
         SessionState.Working => "Working",
         SessionState.NeedsPermission => "Needs you",
-        SessionState.Idle => "Idle",
-        SessionState.Active => "Recently active",
-        _ => "Ended",
+        SessionState.Idle => "Your turn",
+        SessionState.Active => "Done",
+        _ => "Done",
     };
+
+    public static bool IsDone(SessionState s) => s is SessionState.Active or SessionState.Ended;
 
     public static string ToolIcon(string? tool) => Tools.Category(tool) switch
     {
@@ -54,14 +65,16 @@ public static class Res
 }
 
 /// <summary>One option in a segmented picker.</summary>
-public sealed record Option(string Label, string? Value)
+public sealed record Option(string Label, string? Value, string? Description = null)
 {
+    public bool HasDescription => !string.IsNullOrEmpty(Description);
     public override string ToString() => Label;
 }
 
 public static class Options
 {
     public static Option[] Of(params (string label, string? value)[] items) => items.Select(i => new Option(i.label, i.value)).ToArray();
+    public static Option[] Described(params (string label, string? value, string description)[] items) => items.Select(i => new Option(i.label, i.value, i.description)).ToArray();
     public static Option? Pick(IEnumerable<Option> opts, string? value) =>
         opts.FirstOrDefault(o => string.Equals(o.Value, value, StringComparison.OrdinalIgnoreCase));
 }
@@ -95,6 +108,8 @@ public sealed partial class ToastVM : ObservableObject
 {
     public string Message { get; init; } = "";
     public bool Ok { get; init; } = true;
+    public Action? Undo { get; init; }
+    public string UndoLabel { get; init; } = "Undo";
+    public bool HasUndo => Undo != null;
     public IBrush Brush => Res.Brush(Ok ? "Green" : "Red");
-    public Geometry? Icon => Res.Icon(Ok ? "Check" : "Error");
 }

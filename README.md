@@ -18,7 +18,7 @@
 > Overseer is an independent, community project. It is not made, endorsed or supported by Anthropic.
 > "Claude" and "Claude Code" are trademarks of Anthropic.
 
-![Session view](docs/screenshots/session.png)
+![Overview: every session, with a permission request answered inline](docs/screenshots/overview.png)
 
 ## Why
 
@@ -27,18 +27,19 @@ When you run several Claude Code sessions, it's hard to tell which one is workin
 ## Features
 
 **See**
-- **Live sessions**: what each one is doing right now (running a tool, thinking, writing, waiting for you, waiting for permission)
+- **Every session at a glance**: needs you, working, your turn or done, and what each one is doing right now
 - **Context window gauge**: exact from Claude Code's status line, or estimated from the transcript
-- **Plan limits**: your real 5-hour and weekly usage, with reset times, from the status line
-- **Activity timeline**, tools and MCP servers used, skills invoked, subagents, files changed, and the full conversation
-- **Overview**: rolling 5-hour, daily and 7-day token use, tokens per hour, top models and tools
+- **Plan usage**: your real 5-hour and weekly usage with reset times (from the status line), and which sessions used it
+- **Session log**, tools and MCP servers used, skills invoked, subagents, files changed, and the full conversation
+- **Activity**: new tokens per hour over the last day, plus the models, tools and skills of the last 7 days
 - **Reports** by day, project, model or session, with an API-equivalent cost estimate and CSV export
 - **Search** across every conversation on your machine
 
 **Steer**
+- **Answer permission prompts from Overseer**: allow once, always allow (in this project or all projects) or deny with a note telling Claude what to do instead, from the overview, the bell, the mini window or the keyboard (A / D)
 - Default **model**, **effort** per model, **permission mode** and output style for new sessions
 - **Presets** such as "Quick & cheap" or "Deep work", applied as defaults or used to start a session
-- **Skills**: on, name only, manual or off (Claude Code's `skillOverrides`); create or install skills
+- **Skills**: on, name only, only via /command, or off (Claude Code's `skillOverrides`); create or install skills
 - **Plugins**: enable, disable, uninstall, and install from the marketplace
 - **MCP servers**: check status, add and remove
 - **Permission rules**, **hooks**, **CLAUDE.md** instructions, **agents** and **slash commands**
@@ -47,15 +48,17 @@ When you run several Claude Code sessions, it's hard to tell which one is workin
 **Stay informed**
 - **Tray icon** that changes colour: idle, working, or needs you
 - **Desktop notifications** when Claude finishes, needs permission, keeps hitting errors, nears a context or plan limit
-- **Mini mode**: a small always-on-top list of live sessions
-- **Redact mode** hides your prompts, paths and emails for screenshots and streaming
-- Dark and light themes, keyboard and screen-reader friendly controls
+- **Mini window**: small and always on top, with plan usage and Allow / Deny buttons
+- **Hide private info** blurs session titles, prompts, commands, paths and project names for screenshots and screen sharing
+- A native-feeling window: menu bar, command palette (Ctrl+K), keyboard shortcuts, light and dark themes in Claude's colours, screen-reader friendly controls
 
-| Overview | Control |
+| Session | Settings |
 | --- | --- |
-| ![Overview](docs/screenshots/overview.png) | ![Control](docs/screenshots/control.png) |
-| **Reports** | **Configure** |
-| ![Reports](docs/screenshots/reports.png) | ![Configure](docs/screenshots/configure.png) |
+| ![Session with a permission request](docs/screenshots/session.png) | ![Settings](docs/screenshots/settings.png) |
+| **Dark theme and command palette** | **Reports** |
+| ![Dark theme](docs/screenshots/dark.png) | ![Reports](docs/screenshots/reports.png) |
+
+<p align="center"><img src="docs/screenshots/mini.png" alt="Mini window" width="320"></p>
 
 ## Install
 
@@ -82,14 +85,15 @@ Demo mode makes up a handful of sessions in a temporary folder and points Overse
 
 ## Live data (optional, recommended)
 
-Out of the box Overseer reads Claude Code's session logs. Two optional switches in **Control → Live data** make it exact and instant. Both are standard Claude Code features and are written to your `settings.json`:
+Out of the box Overseer reads Claude Code's session logs. Optional switches in **Settings → Live data** make it exact, instant and interactive. All are standard Claude Code features written to your `settings.json`:
 
 | Switch | What it adds | How |
 | --- | --- | --- |
 | **Live events** | The exact tool being run, permission prompts the moment they appear, finish notifications | Registers `Overseer hook` as an async [hook](https://code.claude.com/docs/en/hooks) for session, prompt, tool, permission, notification and stop events. It appends the event to `~/.overseer/events/`, prints nothing and always exits 0, so it never changes what Claude does. |
 | **Status line** | Exact context use and your real 5-hour and weekly plan limits | Sets Overseer as your [status line](https://code.claude.com/docs/en/statusline). It saves the JSON Claude Code sends and prints a one-line summary. Overseer won't replace an existing status line without asking. |
+| **Answer permission prompts here** | Allow, always allow or deny (with a note) from Overseer | Registers `Overseer permission` as a [PermissionRequest hook](https://code.claude.com/docs/en/hooks). While the Overseer window is running, the hook hands the request to the app (via `~/.overseer/pending`) and waits for your answer, up to a time you choose (1 minute by default). If you don't answer, or Overseer isn't running, it prints nothing and Claude Code asks in the terminal as usual. "Always allow" uses Claude Code's own suggested rule and saves it where you pick; the toast lets you remove it again. |
 
-Turning a switch off removes exactly what Overseer added and nothing else. Claude Code's docs don't say whether hooks and the status line run in the Claude desktop app's Code tab, so Overseer always falls back to the logs.
+Turning a switch off removes exactly what Overseer added and nothing else. Claude Code's docs don't say whether hooks and the status line run in the Claude desktop app's Code tab, so Overseer always falls back to the logs. Overseer can't type into a running terminal, so replies to Claude still go in the terminal; use **Resume** or **Open in Claude desktop app** to jump there.
 
 ## Privacy and safety
 
@@ -126,7 +130,7 @@ Use `osx-arm64`, `osx-x64`, `linux-x64` or `linux-arm64` for other systems.
 | Piece | What it does |
 | --- | --- |
 | `src/Overseer.Core` | Everything that isn't UI: reads transcripts incrementally with a saved index, watches folders for changes, merges hook and status-line data, edits settings safely, runs the `claude` CLI, alerts, reports, search, redaction. No UI dependencies; fully unit-tested. |
-| `src/Overseer.App` | The [Avalonia](https://avaloniaui.net) app: MVVM view models and XAML views, tray icon, notifications, mini mode, extension loader. |
+| `src/Overseer.App` | The [Avalonia](https://avaloniaui.net) app: MVVM view models and XAML views, tray icon, notifications, mini window, command palette, extension loader. |
 | `tests/Overseer.Core.Tests` | xUnit tests with fixture transcripts. |
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data sources and design, and [docs/EXTENSIONS.md](docs/EXTENSIONS.md) for the experimental extension API.

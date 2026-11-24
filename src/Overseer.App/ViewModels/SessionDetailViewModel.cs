@@ -39,6 +39,7 @@ public sealed partial class SessionDetailViewModel : ObservableObject
     [ObservableProperty] List<ChipVM> chips = new();
     [ObservableProperty] string stateText = "";
     [ObservableProperty] IBrush stateBrush = Brushes.Gray;
+    [ObservableProperty] IBrush stateInk = Brushes.Gray;
     [ObservableProperty] IBrush heroBg = Brushes.Transparent;
     [ObservableProperty] string heroHead = "";
     [ObservableProperty] string heroDetail = "";
@@ -79,7 +80,24 @@ public sealed partial class SessionDetailViewModel : ObservableObject
     [ObservableProperty] List<FileVM> filesChanged = new();
     [ObservableProperty] bool isLive;
     [ObservableProperty] bool showConversation;
-    [ObservableProperty] Option? forkPick;
+    [ObservableProperty] Option? forkModel;
+    [ObservableProperty] PendingVM? pending;
+    [ObservableProperty] bool isStopping;
+    [ObservableProperty] string project = "";
+    [ObservableProperty] string elapsed = "";
+    [ObservableProperty] bool canStop;
+
+    public bool HasPending => Pending != null;
+    public bool ShowNow => Pending == null;
+    partial void OnPendingChanged(PendingVM? value) { OnPropertyChanged(nameof(HasPending)); OnPropertyChanged(nameof(ShowNow)); }
+
+    public void SetPending(PendingVM? p, bool stopping)
+    {
+        Pending = p;
+        IsStopping = stopping;
+        CanStop = s.IsLive && s.Pid > 0 && !stopping;
+        UpdateHero();
+    }
 
     public bool HasTools => ToolBars.Count > 0;
     public bool HasMcp => McpBars.Count > 0;
@@ -93,7 +111,9 @@ public sealed partial class SessionDetailViewModel : ObservableObject
         lastEventCount = s.Events.Count;
         lastLast = s.Last;
 
-        Title = Redactor.Text(s.Title);
+        Title = Redactor.Title(s.Title, s.Id);
+        Project = Redactor.Name(PendingVM.FolderName(s.Cwd));
+        ForkModel ??= ForkModels[0];
         Cwd = Redactor.Text(s.Cwd ?? "");
         IsLive = s.IsLive;
         var chips = new List<ChipVM>();
@@ -132,6 +152,7 @@ public sealed partial class SessionDetailViewModel : ObservableObject
         Errors = s.Errors.ToString(CultureInfo.InvariantCulture);
         ErrorsBrush = Res.Brush(s.Errors > 0 ? "Red" : "Faint");
         Span = Text.Duration(s.Last - s.First);
+        Elapsed = Span;
         Started = s.First == DateTime.MinValue ? "—" : s.First.ToString("MMM d, HH:mm", CultureInfo.InvariantCulture);
         LastActivity = Text.Ago(s.Last);
 
@@ -166,10 +187,11 @@ public sealed partial class SessionDetailViewModel : ObservableObject
 
     void UpdateHero()
     {
-        var st = s.State;
+        var st = Pending != null && s.State != SessionState.Ended ? SessionState.NeedsPermission : s.State;
         StateText = Res.StateText(st);
         var key = Res.StateKey(st);
         StateBrush = Res.Brush(key);
+        StateInk = Res.Brush(Res.StateInkKey(st));
         HeroBg = Res.Tint(key, 0x22);
         IsWorking = st is SessionState.Working or SessionState.NeedsPermission;
         var last = s.Events.LastOrDefault();
@@ -180,8 +202,8 @@ public sealed partial class SessionDetailViewModel : ObservableObject
         switch (st)
         {
             case SessionState.NeedsPermission:
-                HeroHead = "Waiting for your permission";
-                HeroDetail = Redactor.Text(h?.Message ?? "Claude wants to run a tool. Approve or deny it in the session.");
+                HeroHead = "Waiting for your permission in the terminal";
+                HeroDetail = Redactor.Text(h?.Message ?? "Claude wants to use a tool.") + " To answer from Overseer, turn on Settings → Live data → Answer permission prompts here.";
                 icon = "Shield";
                 break;
             case SessionState.Working when h?.RunningTool != null && h.Updated > DateTime.Now.AddMinutes(-10):
@@ -207,6 +229,7 @@ public sealed partial class SessionDetailViewModel : ObservableObject
                 break;
         }
         HeroIcon = Res.Icon(icon);
+        if (IsStopping) { StateText = "Stopping"; HeroHead = "Stopping after the current step…"; HeroDetail = "The conversation stays on disk and can be resumed."; }
     }
 
     // ---------- actions ----------
@@ -221,20 +244,14 @@ public sealed partial class SessionDetailViewModel : ObservableObject
     [RelayCommand] void OpenFolder() { if (s.Cwd != null) ProcessControl.Open(s.Cwd); }
     [RelayCommand] void ShowTranscript() => ProcessControl.Reveal(s.FilePath);
 
-    [RelayCommand]
-    async Task Stop()
-    {
-        if (!s.IsLive || s.Pid <= 0) return;
-        if (!await main.ConfirmAsync($"Stop \"{Title}\"?\n\nOverseer asks the Claude process (pid {s.Pid}) to stop, and only force-closes it if it doesn't respond. The conversation stays on disk and can be resumed.", "Stop session")) return;
-        main.Toast("Stopping…", true);
-        main.Toast(await ProcessControl.StopGracefully(s.Pid, TimeSpan.FromSeconds(6)));
-    }
+    [RelayCommand] Task Stop() => main.StopSession(s, Title);
 
-    partial void OnForkPickChanged(Option? value)
+    [RelayCommand] void ForkCopy() => Fork(ForkModel?.Value ?? "fable");
+
+    public void Fork(string model)
     {
-        if (value?.Value == null) return;
-        main.Toast(Terminal.LaunchClaude(s.Cwd, new[] { "--resume", s.Id, "--fork-session", "--model", value.Value }));
-        ForkPick = null;
+        var r = Terminal.LaunchClaude(s.Cwd, new[] { "--resume", s.Id, "--fork-session", "--model", model });
+        main.Toast(r.Ok ? $"Opened a copy of \"{Title}\" on {Text.PrettyModel(model)} in a terminal. The original is untouched." : r.Message, r.Ok);
     }
 
     [RelayCommand]

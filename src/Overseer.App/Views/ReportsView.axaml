@@ -4,9 +4,8 @@
              x:Class="Overseer.App.Views.ReportsView"
              x:DataType="vm:ReportsViewModel">
   <ScrollViewer>
-    <StackPanel Margin="30,24,30,30">
-      <TextBlock Text="Reports" Classes="h1" />
-      <TextBlock Text="Cost is the API-equivalent price from your editable price table. Subscription plans aren't billed per token." Classes="muted wrap" Margin="0,6,0,16" />
+    <StackPanel Margin="16,14,16,16">
+      <TextBlock Text="Cost is the API-equivalent price from your editable price table. Subscription plans aren't billed per token." Classes="muted wrap" Margin="0,0,0,12" />
       <WrapPanel>
         <ListBox Classes="segmented" ItemsSource="{Binding Ranges}" SelectedItem="{Binding Range}" Margin="0,0,12,8" AutomationProperties.Name="Time range" />
         <ListBox Classes="segmented" ItemsSource="{Binding Groups}" SelectedItem="{Binding Group}" Margin="0,0,12,8" AutomationProperties.Name="Group by" />

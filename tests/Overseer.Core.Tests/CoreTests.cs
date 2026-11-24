@@ -182,6 +182,7 @@ public sealed class SettingsFileTests : IDisposable
     }
 }
 
+[Collection("overseer-home")]
 public class HookAndStatusLineTests
 {
     [Fact]
@@ -331,5 +332,118 @@ public sealed class IntegrationRemovalTests : IDisposable
         var text = File.ReadAllText(FilePath);
         Assert.Contains("say done", text);
         Assert.DoesNotContain(((char)92) + "u0022", text); // the escaped form of a quote must not appear
+    }
+}
+
+[Collection("overseer-home")]
+public sealed class PermissionBridgeTests : IDisposable
+{
+    readonly string home = Directory.CreateTempSubdirectory("overseer-perm-").FullName;
+    public PermissionBridgeTests() => Environment.SetEnvironmentVariable("OVERSEER_HOME", home);
+    public void Dispose() { Environment.SetEnvironmentVariable("OVERSEER_HOME", null); try { Directory.Delete(home, true); } catch { } }
+
+    const string Request = "{\"session_id\":\"s1\",\"cwd\":\"C:/code/web\",\"hook_event_name\":\"PermissionRequest\",\"tool_name\":\"Bash\"," +
+        "\"tool_input\":{\"command\":\"npm test -- --watch=false\",\"description\":\"Run the tests\"}," +
+        "\"permission_suggestions\":[{\"type\":\"addRules\",\"rules\":[{\"toolName\":\"Bash\",\"ruleContent\":\"npm test:*\"}],\"behavior\":\"allow\",\"destination\":\"localSettings\"}]}";
+
+    [Fact]
+    public void Does_nothing_when_the_app_is_not_running()
+    {
+        var output = new StringWriter();
+        Assert.Equal(0, PermissionBridge.RunHook(new StringReader(Request), output, TimeSpan.FromSeconds(5)));
+        Assert.Equal("", output.ToString());
+        Assert.Empty(PermissionBridge.Pending());
+    }
+
+    [Fact]
+    public async Task Waits_for_an_answer_from_the_app()
+    {
+        PermissionBridge.Heartbeat();
+        var output = new StringWriter();
+        var hook = Task.Run(() => PermissionBridge.RunHook(new StringReader(Request), output, TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(20)));
+
+        PendingPermission? p = null;
+        for (int i = 0; i < 200 && p == null; i++) { p = PermissionBridge.Pending().FirstOrDefault(); if (p == null) Thread.Sleep(20); }
+        Assert.NotNull(p);
+        Assert.Equal("s1", p!.SessionId);
+        Assert.Equal("npm test -- --watch=false", p.Detail);
+        Assert.Equal("Run the tests", p.Reason);
+        Assert.Equal("Bash(npm test:*)", p.Rule);
+
+        Assert.True(PermissionBridge.Answer(p.Id, PermissionAnswer.Deny("run only the settings tests")).Ok);
+        Assert.Equal(0, await hook);
+        var o = JsonNode.Parse(output.ToString())!["hookSpecificOutput"]!;
+        Assert.Equal("PermissionRequest", o["hookEventName"]!.GetValue<string>());
+        Assert.Equal("deny", o["decision"]!["behavior"]!.GetValue<string>());
+        Assert.Equal("run only the settings tests", o["decision"]!["message"]!.GetValue<string>());
+        Assert.Empty(PermissionBridge.Pending());
+        Assert.False(PermissionBridge.Answer(p.Id, PermissionAnswer.AllowOnce()).Ok); // already answered
+    }
+
+    [Fact]
+    public void Times_out_quietly()
+    {
+        PermissionBridge.Heartbeat();
+        var output = new StringWriter();
+        Assert.Equal(0, PermissionBridge.RunHook(new StringReader(Request), output, TimeSpan.FromMilliseconds(150), TimeSpan.FromMilliseconds(20)));
+        Assert.Equal("", output.ToString());
+        Assert.Empty(PermissionBridge.Pending());
+    }
+
+    [Fact]
+    public void Always_allow_uses_the_suggestion_with_the_chosen_place()
+    {
+        var input = (JsonObject)JsonNode.Parse(Request)!;
+        var d = JsonNode.Parse(PermissionBridge.BuildOutput(input, PermissionAnswer.AllowAlways("userSettings")))!["hookSpecificOutput"]!["decision"]!;
+        Assert.Equal("allow", d["behavior"]!.GetValue<string>());
+        var u = d["updatedPermissions"]![0]!;
+        Assert.Equal("addRules", u["type"]!.GetValue<string>());
+        Assert.Equal("userSettings", u["destination"]!.GetValue<string>());
+        Assert.Equal("npm test:*", u["rules"]![0]!["ruleContent"]!.GetValue<string>());
+
+        var once = JsonNode.Parse(PermissionBridge.BuildOutput(input, PermissionAnswer.AllowOnce()))!["hookSpecificOutput"]!["decision"]!;
+        Assert.Null(once["updatedPermissions"]);
+
+        var noSuggestion = (JsonObject)JsonNode.Parse("{\"tool_name\":\"WebFetch\",\"tool_input\":{\"url\":\"https://x\"}}")!;
+        Assert.Equal("WebFetch", PermissionBridge.RuleText(noSuggestion));
+    }
+
+    [Fact]
+    public void Removes_one_allow_rule_from_a_project_file()
+    {
+        var file = Path.Combine(home, "settings.local.json");
+        File.WriteAllText(file, "{\"permissions\":{\"allow\":[\"Read(./src/**)\",\"Bash(npm test:*)\"]},\"model\":\"opus\"}");
+        Assert.True(PermissionBridge.RemoveAllowRule(file, "Bash(npm test:*)").Ok);
+        var o = JsonNode.Parse(File.ReadAllText(file))!;
+        Assert.Single(o["permissions"]!["allow"]!.AsArray());
+        Assert.Equal("opus", o["model"]!.GetValue<string>());
+        Assert.False(PermissionBridge.RemoveAllowRule(file, "Bash(npm test:*)").Ok);
+    }
+}
+
+[Collection("settings-file")]
+public sealed class PermissionHookInstallTests : IDisposable
+{
+    readonly string dir = Directory.CreateTempSubdirectory("overseer-ph-").FullName;
+    string FilePath => Path.Combine(dir, "settings.json");
+    public PermissionHookInstallTests() => SettingsFile.PathOverride = FilePath;
+    public void Dispose() { SettingsFile.PathOverride = null; try { Directory.Delete(dir, true); } catch { } }
+
+    [Fact]
+    public void Installs_a_synchronous_hook_next_to_the_event_hooks()
+    {
+        File.WriteAllText(FilePath, "{}");
+        Assert.True(Integration.InstallHooks("C:/x/Overseer.exe").Ok);
+        Assert.True(Integration.InstallPermissionHook("C:/x/Overseer.exe", 60).Ok);
+        Assert.True(Integration.PermissionHookInstalled());
+        var groups = JsonNode.Parse(File.ReadAllText(FilePath))!["hooks"]!["PermissionRequest"]!.AsArray();
+        Assert.Equal(2, groups.Count);
+        var mine = groups.Select(g => g!["hooks"]![0]!).Single(h => h["command"]!.GetValue<string>().EndsWith(" permission"));
+        Assert.Null(mine["async"]);
+        Assert.Equal(75, mine["timeout"]!.GetValue<int>());
+
+        Assert.True(Integration.UninstallPermissionHook().Ok);
+        Assert.False(Integration.PermissionHookInstalled());
+        Assert.True(Integration.HooksInstalled()); // the event hooks stay
     }
 }

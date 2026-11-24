@@ -39,7 +39,12 @@ public sealed class OverseerConfig
     public bool Redact { get; set; }
     public bool CloseToTray { get; set; } = true;
     public bool StartMinimized { get; set; }
-    public string Theme { get; set; } = "dark";
+    public string Theme { get; set; } = "system";
+    /// <summary>How long a permission prompt waits for an answer in Overseer before Claude Code asks in the terminal.</summary>
+    public int PermissionWaitSeconds { get; set; } = 60;
+    /// <summary>Which plan window the usage dial shows: "5h" or "week".</summary>
+    public string UsageWindow { get; set; } = "5h";
+    public bool HideDone { get; set; }
     /// <summary>Load extension DLLs from ~/.overseer/plugins (off by default; they run with your permissions).</summary>
     public bool LoadExtensions { get; set; }
 
@@ -360,6 +365,15 @@ public static class Redactor
 
     /// <summary>Your own prompts are hidden entirely.</summary>
     public static string Prompt(string? s) => Enabled ? "••••••••" : s ?? "";
+
+    /// <summary>Session titles usually are your first prompt, so they become "Session 3f2a".</summary>
+    public static string Title(string? title, string id) => Enabled ? "Session " + ShortHash(id) : title ?? "";
+
+    /// <summary>Four stable hex digits, so redacted sessions can still be told apart.</summary>
+    static string ShortHash(string s) { unchecked { uint h = 2166136261; foreach (var c in s) h = (h ^ c) * 16777619; return (h & 0xFFFF).ToString("x4"); } }
+
+    /// <summary>Project and folder names, commands and other short private strings.</summary>
+    public static string Name(string? s) => Enabled && !string.IsNullOrEmpty(s) ? "••••" : s ?? "";
 }
 
 // ================= files: skills, agents, commands, memory =================

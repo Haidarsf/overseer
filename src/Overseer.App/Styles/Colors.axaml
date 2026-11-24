@@ -1,71 +1,87 @@
+<!-- Overseer's palette: Claude's ivory / slate / clay, with olive and sky as quiet secondaries.
+     Older key names (Blue, Green, Purple…) are kept so every view picks up the palette. -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI, SF Pro Text, -apple-system, Inter, Ubuntu, Cantarell, sans-serif</FontFamily>
+  <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas, SF Mono, Menlo, DejaVu Sans Mono, monospace</FontFamily>
+  <FontFamily x:Key="SerifFont">Anthropic Serif, Georgia, Cambria, Times New Roman, serif</FontFamily>
+
   <ResourceDictionary.ThemeDictionaries>
-    <ResourceDictionary x:Key="Dark">
-      <SolidColorBrush x:Key="BgApp" Color="#0F1117" />
-      <SolidColorBrush x:Key="BgSide" Color="#13151F" />
-      <SolidColorBrush x:Key="BgCard" Color="#191C28" />
-      <SolidColorBrush x:Key="BgCard2" Color="#161823" />
-      <SolidColorBrush x:Key="BgHover" Color="#232741" />
-      <SolidColorBrush x:Key="BgInput" Color="#11131C" />
-      <SolidColorBrush x:Key="Line" Color="#2A2E44" />
-      <SolidColorBrush x:Key="LineSoft" Color="#1F2235" />
-      <SolidColorBrush x:Key="Fg" Color="#ECEEF6" />
-      <SolidColorBrush x:Key="Fg2" Color="#C3C7D9" />
-      <SolidColorBrush x:Key="Muted" Color="#8B90A7" />
-      <SolidColorBrush x:Key="Faint" Color="#5D6279" />
-      <SolidColorBrush x:Key="Accent" Color="#7C83FD" />
-      <SolidColorBrush x:Key="Accent2" Color="#A78BFA" />
-      <SolidColorBrush x:Key="AccentTint" Color="#267C83FD" />
-      <SolidColorBrush x:Key="Green" Color="#34D399" />
-      <SolidColorBrush x:Key="Blue" Color="#60A5FA" />
-      <SolidColorBrush x:Key="Red" Color="#F87171" />
-      <SolidColorBrush x:Key="Yellow" Color="#FBBF24" />
-      <SolidColorBrush x:Key="Purple" Color="#C084FC" />
-      <SolidColorBrush x:Key="Teal" Color="#2DD4BF" />
-      <SolidColorBrush x:Key="Pink" Color="#F472B6" />
-      <SolidColorBrush x:Key="Orange" Color="#FB923C" />
-      <LinearGradientBrush x:Key="AccentGradient" StartPoint="0%,0%" EndPoint="100%,100%">
-        <GradientStop Color="#7C83FD" Offset="0" />
-        <GradientStop Color="#A78BFA" Offset="1" />
-      </LinearGradientBrush>
-      <RadialGradientBrush x:Key="Glow" Center="90%,0%" GradientOrigin="90%,0%" RadiusX="60%" RadiusY="80%">
-        <GradientStop Color="#227C83FD" Offset="0" />
-        <GradientStop Color="#007C83FD" Offset="1" />
-      </RadialGradientBrush>
-    </ResourceDictionary>
     <ResourceDictionary x:Key="Light">
-      <SolidColorBrush x:Key="BgApp" Color="#F4F5FA" />
-      <SolidColorBrush x:Key="BgSide" Color="#ECEEF7" />
+      <SolidColorBrush x:Key="BgApp" Color="#FAF9F5" />
+      <SolidColorBrush x:Key="BgSide" Color="#F0EEE6" />
       <SolidColorBrush x:Key="BgCard" Color="#FFFFFF" />
-      <SolidColorBrush x:Key="BgCard2" Color="#FAFBFF" />
-      <SolidColorBrush x:Key="BgHover" Color="#E5E7F5" />
+      <SolidColorBrush x:Key="BgCard2" Color="#F5F4EE" />
+      <SolidColorBrush x:Key="BgHover" Color="#141F1E1D" />
       <SolidColorBrush x:Key="BgInput" Color="#FFFFFF" />
-      <SolidColorBrush x:Key="Line" Color="#D9DCEC" />
-      <SolidColorBrush x:Key="LineSoft" Color="#E6E8F3" />
-      <SolidColorBrush x:Key="Fg" Color="#151726" />
-      <SolidColorBrush x:Key="Fg2" Color="#383D53" />
-      <SolidColorBrush x:Key="Muted" Color="#686D85" />
-      <SolidColorBrush x:Key="Faint" Color="#989DB2" />
-      <SolidColorBrush x:Key="Accent" Color="#5A61EE" />
-      <SolidColorBrush x:Key="Accent2" Color="#8B5CF6" />
-      <SolidColorBrush x:Key="AccentTint" Color="#1F5A61EE" />
-      <SolidColorBrush x:Key="Green" Color="#059669" />
-      <SolidColorBrush x:Key="Blue" Color="#2563EB" />
-      <SolidColorBrush x:Key="Red" Color="#DC2626" />
-      <SolidColorBrush x:Key="Yellow" Color="#B45309" />
-      <SolidColorBrush x:Key="Purple" Color="#9333EA" />
-      <SolidColorBrush x:Key="Teal" Color="#0D9488" />
-      <SolidColorBrush x:Key="Pink" Color="#DB2777" />
-      <SolidColorBrush x:Key="Orange" Color="#EA580C" />
-      <LinearGradientBrush x:Key="AccentGradient" StartPoint="0%,0%" EndPoint="100%,100%">
-        <GradientStop Color="#5A61EE" Offset="0" />
-        <GradientStop Color="#8B5CF6" Offset="1" />
-      </LinearGradientBrush>
-      <RadialGradientBrush x:Key="Glow" Center="90%,0%" GradientOrigin="90%,0%" RadiusX="60%" RadiusY="80%">
-        <GradientStop Color="#185A61EE" Offset="0" />
-        <GradientStop Color="#005A61EE" Offset="1" />
-      </RadialGradientBrush>
+      <SolidColorBrush x:Key="Sel" Color="#E8E6DC" />
+      <SolidColorBrush x:Key="Track" Color="#E8E6DC" />
+      <SolidColorBrush x:Key="Line" Color="#241F1E1D" />
+      <SolidColorBrush x:Key="LineSoft" Color="#121F1E1D" />
+      <SolidColorBrush x:Key="Fg" Color="#141413" />
+      <SolidColorBrush x:Key="Fg2" Color="#3D3D3A" />
+      <SolidColorBrush x:Key="Muted" Color="#5E5D59" />
+      <SolidColorBrush x:Key="Faint" Color="#87867F" />
+      <SolidColorBrush x:Key="Accent" Color="#D97757" />
+      <SolidColorBrush x:Key="Accent2" Color="#A5502F" />
+      <SolidColorBrush x:Key="AccentTint" Color="#1FD97757" />
+      <SolidColorBrush x:Key="PrimaryBg" Color="#141413" />
+      <SolidColorBrush x:Key="PrimaryHover" Color="#3D3D3A" />
+      <SolidColorBrush x:Key="PrimaryFg" Color="#FAF9F5" />
+      <SolidColorBrush x:Key="NeedBg" Color="#FBEFE8" />
+      <SolidColorBrush x:Key="NeedFg" Color="#A5502F" />
+      <SolidColorBrush x:Key="WorkFg" Color="#2F5E8C" />
+      <SolidColorBrush x:Key="WorkDot" Color="#6A9BCC" />
+      <SolidColorBrush x:Key="DoneDot" Color="#B0AEA5" />
+      <SolidColorBrush x:Key="CodeBg" Color="#141413" />
+      <SolidColorBrush x:Key="CodeFg" Color="#FAF9F5" />
+      <SolidColorBrush x:Key="Overlay" Color="#61141413" />
+      <SolidColorBrush x:Key="Green" Color="#5A6B43" />
+      <SolidColorBrush x:Key="Blue" Color="#2F5E8C" />
+      <SolidColorBrush x:Key="Red" Color="#B5462B" />
+      <SolidColorBrush x:Key="Yellow" Color="#A5502F" />
+      <SolidColorBrush x:Key="Purple" Color="#6E5C8A" />
+      <SolidColorBrush x:Key="Teal" Color="#4F7C74" />
+      <SolidColorBrush x:Key="Pink" Color="#9C5470" />
+      <SolidColorBrush x:Key="Orange" Color="#B86534" />
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="BgApp" Color="#1F1E1D" />
+      <SolidColorBrush x:Key="BgSide" Color="#181817" />
+      <SolidColorBrush x:Key="BgCard" Color="#262624" />
+      <SolidColorBrush x:Key="BgCard2" Color="#2B2A27" />
+      <SolidColorBrush x:Key="BgHover" Color="#14FAF9F5" />
+      <SolidColorBrush x:Key="BgInput" Color="#1A1918" />
+      <SolidColorBrush x:Key="Sel" Color="#3D3D3A" />
+      <SolidColorBrush x:Key="Track" Color="#3D3D3A" />
+      <SolidColorBrush x:Key="Line" Color="#1FFAF9F5" />
+      <SolidColorBrush x:Key="LineSoft" Color="#0FFAF9F5" />
+      <SolidColorBrush x:Key="Fg" Color="#F0EEE6" />
+      <SolidColorBrush x:Key="Fg2" Color="#C2C0B6" />
+      <SolidColorBrush x:Key="Muted" Color="#9C9A92" />
+      <SolidColorBrush x:Key="Faint" Color="#75736C" />
+      <SolidColorBrush x:Key="Accent" Color="#D97757" />
+      <SolidColorBrush x:Key="Accent2" Color="#E89A7C" />
+      <SolidColorBrush x:Key="AccentTint" Color="#24D97757" />
+      <SolidColorBrush x:Key="PrimaryBg" Color="#F0EEE6" />
+      <SolidColorBrush x:Key="PrimaryHover" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="PrimaryFg" Color="#141413" />
+      <SolidColorBrush x:Key="NeedBg" Color="#1FD97757" />
+      <SolidColorBrush x:Key="NeedFg" Color="#E89A7C" />
+      <SolidColorBrush x:Key="WorkFg" Color="#9DC0E8" />
+      <SolidColorBrush x:Key="WorkDot" Color="#6A9BCC" />
+      <SolidColorBrush x:Key="DoneDot" Color="#75736C" />
+      <SolidColorBrush x:Key="CodeBg" Color="#0E0E0D" />
+      <SolidColorBrush x:Key="CodeFg" Color="#F0EEE6" />
+      <SolidColorBrush x:Key="Overlay" Color="#80000000" />
+      <SolidColorBrush x:Key="Green" Color="#A3B57F" />
+      <SolidColorBrush x:Key="Blue" Color="#9DC0E8" />
+      <SolidColorBrush x:Key="Red" Color="#E5806A" />
+      <SolidColorBrush x:Key="Yellow" Color="#E89A7C" />
+      <SolidColorBrush x:Key="Purple" Color="#B4A3CC" />
+      <SolidColorBrush x:Key="Teal" Color="#8FBFB5" />
+      <SolidColorBrush x:Key="Pink" Color="#D49AB0" />
+      <SolidColorBrush x:Key="Orange" Color="#E0A070" />
     </ResourceDictionary>
   </ResourceDictionary.ThemeDictionaries>
 </ResourceDictionary>

@@ -4,10 +4,9 @@
              x:Class="Overseer.App.Views.ConfigureView"
              x:DataType="vm:ConfigureViewModel">
   <ScrollViewer>
-    <StackPanel Margin="30,24,30,30">
-      <TextBlock Text="Configure" Classes="h1" />
+    <StackPanel Margin="14,10,14,16">
       <TextBlock Text="The parts of Claude Code that are fiddly to edit by hand: permission rules, hooks, instructions (CLAUDE.md), agents and commands."
-                 Classes="muted wrap" Margin="0,6,0,14" />
+                 Classes="muted wrap" Margin="6,0,6,6" />
 
       <Grid ColumnDefinitions="*,*" Margin="-7,0">
         <StackPanel>
@@ -71,7 +70,7 @@
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
-              <TextBlock Text="Overseer's own hooks are switched on and off in Control → Live data." Classes="faint wrap" />
+              <TextBlock Text="Overseer's own hooks are switched on and off in Settings → Live data." Classes="faint wrap" />
             </StackPanel>
           </Border>
         </StackPanel>

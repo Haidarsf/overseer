@@ -7,64 +7,122 @@
         x:DataType="vm:MainViewModel"
         Title="Overseer"
         Icon="/Assets/overseer.ico"
-        Width="1440" Height="920" MinWidth="1100" MinHeight="660"
+        Width="1440" Height="900" MinWidth="980" MinHeight="620"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource BgApp}">
-  <Panel>
-    <Border Background="{DynamicResource Glow}" IsHitTestVisible="False" />
-    <Grid RowDefinitions="64,*">
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+K" Command="{Binding OpenPaletteCommand}" />
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding OpenNewCommand}" />
+    <KeyBinding Gesture="Ctrl+D1" Command="{Binding GoCommand}" CommandParameter="0" />
+    <KeyBinding Gesture="Ctrl+D2" Command="{Binding GoCommand}" CommandParameter="1" />
+    <KeyBinding Gesture="Ctrl+D3" Command="{Binding GoCommand}" CommandParameter="2" />
+    <KeyBinding Gesture="Ctrl+D4" Command="{Binding GoCommand}" CommandParameter="3" />
+    <KeyBinding Gesture="Ctrl+OemComma" Command="{Binding GoCommand}" CommandParameter="4" />
+    <KeyBinding Gesture="Ctrl+Shift+D" Command="{Binding ToggleDarkCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+H" Command="{Binding ToggleRedactCommand}" />
+    <KeyBinding Gesture="Ctrl+M" Command="{Binding ToggleMiniCommand}" />
+    <KeyBinding Gesture="Ctrl+OemQuestion" Command="{Binding ShowShortcutsCommand}" />
+    <KeyBinding Gesture="Escape" Command="{Binding EscapeCommand}" />
+  </Window.KeyBindings>
 
-      <!-- ===== header ===== -->
-      <Grid ColumnDefinitions="Auto,*,Auto" Margin="20,0">
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
-          <Image Source="/Assets/overseer-256.png" Width="36" Height="36" />
-          <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="Overseer" FontSize="16" FontWeight="SemiBold" />
-            <TextBlock Text="See and steer your Claude Code sessions" Classes="faint" />
+  <Panel>
+    <Grid RowDefinitions="36,*,24">
+
+      <!-- ===== title bar: app name, menus, notifications (the system draws the window buttons) ===== -->
+      <Border Background="{DynamicResource BgSide}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1">
+        <DockPanel x:Name="TitleBar">
+          <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8" Margin="12,0,6,0" VerticalAlignment="Center" IsHitTestVisible="False">
+            <Image Source="/Assets/overseer-256.png" Width="16" Height="16" />
+            <TextBlock Text="Overseer" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
           </StackPanel>
-        </StackPanel>
-        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="10">
-          <Border CornerRadius="14" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Line}" BorderThickness="1" Padding="12,6">
-            <StackPanel Orientation="Horizontal" Spacing="8">
-              <Ellipse Width="8" Height="8" Fill="{Binding StatusBrush}" VerticalAlignment="Center" />
-              <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="{DynamicResource Fg2}" VerticalAlignment="Center" />
+          <Menu DockPanel.Dock="Left" VerticalAlignment="Stretch">
+            <MenuItem Header="_File">
+              <MenuItem Header="New session…" InputGesture="Ctrl+N" Command="{Binding OpenNewCommand}" />
+              <MenuItem Header="Settings" InputGesture="Ctrl+OemComma" Command="{Binding GoCommand}" CommandParameter="4" />
+              <Separator />
+              <MenuItem Header="Close window (keeps running in the tray)" Command="{Binding CloseToTrayCommand}" />
+              <MenuItem Header="Quit Overseer" Command="{Binding QuitCommand}" />
+            </MenuItem>
+            <MenuItem Header="_View">
+              <MenuItem Header="Overview" InputGesture="Ctrl+D1" Command="{Binding GoCommand}" CommandParameter="0" />
+              <MenuItem Header="Session" InputGesture="Ctrl+D2" Command="{Binding GoCommand}" CommandParameter="1" />
+              <MenuItem Header="Reports" InputGesture="Ctrl+D3" Command="{Binding GoCommand}" CommandParameter="2" />
+              <MenuItem Header="Search conversations" InputGesture="Ctrl+D4" Command="{Binding GoCommand}" CommandParameter="3" />
+              <Separator />
+              <MenuItem Header="Dark theme" InputGesture="Ctrl+Shift+D" ToggleType="CheckBox" IsChecked="{Binding IsDark}" />
+              <MenuItem Header="Hide done sessions" ToggleType="CheckBox" IsChecked="{Binding HideDone}" />
+              <MenuItem Header="Hide private info" InputGesture="Ctrl+Shift+H" ToggleType="CheckBox" IsChecked="{Binding Redact}" />
+              <Separator />
+              <MenuItem Header="Mini window" InputGesture="Ctrl+M" Command="{Binding ToggleMiniCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Session">
+              <MenuItem Header="Search or run a command…" InputGesture="Ctrl+K" Command="{Binding OpenPaletteCommand}" />
+              <Separator />
+              <MenuItem Header="Resume in terminal" Command="{Binding Detail.ResumeCommand}" IsEnabled="{Binding !NoSession}" />
+              <MenuItem Header="Open in the Claude desktop app" Command="{Binding Detail.OpenDesktopCommand}" IsEnabled="{Binding !NoSession}" />
+              <MenuItem Header="Continue as a copy" Command="{Binding Detail.ForkCopyCommand}" IsEnabled="{Binding !NoSession}" />
+              <MenuItem Header="Open project folder" Command="{Binding Detail.OpenFolderCommand}" IsEnabled="{Binding !NoSession}" />
+              <MenuItem Header="Read the conversation" Command="{Binding Detail.LoadConversationCommand}" IsEnabled="{Binding !NoSession}" />
+              <Separator />
+              <MenuItem Header="Stop gently…" Command="{Binding Detail.StopCommand}" IsEnabled="{Binding Detail.CanStop, FallbackValue=False}" />
+            </MenuItem>
+            <MenuItem Header="_Help">
+              <MenuItem Header="Keyboard shortcuts" InputGesture="Ctrl+OemQuestion" Command="{Binding ShowShortcutsCommand}" />
+              <MenuItem Header="What Overseer reads and writes" Command="{Binding GoPrivacyCommand}" />
+              <MenuItem Header="Overseer on GitHub" Command="{Binding OpenGitHubCommand}" />
+            </MenuItem>
+          </Menu>
+          <Panel DockPanel.Dock="Right" x:Name="CaptionSpace" Width="0" />
+          <Button DockPanel.Dock="Right" x:Name="BellButton" Classes="bar" Command="{Binding ToggleBellCommand}"
+                  ToolTip.Tip="Waiting for you" AutomationProperties.Name="Waiting for you">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <PathIcon Data="{StaticResource Icon.Bell}" Width="14" Height="14" />
+              <Border IsVisible="{Binding HasNeeds}" Background="{DynamicResource Accent}" CornerRadius="8" MinWidth="16" Height="16" Padding="4,0">
+                <TextBlock Text="{Binding NeedsCount}" FontSize="10.5" FontWeight="Bold" Foreground="#141413" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
             </StackPanel>
-          </Border>
-          <ToggleButton IsChecked="{Binding Redact}" Margin="0" Padding="9,7" CornerRadius="9"
-                        ToolTip.Tip="Redact mode: hide your prompts, paths and emails (for screenshots and streaming)"
-                        AutomationProperties.Name="Redact mode">
-            <PathIcon Data="{StaticResource Icon.EyeOff}" />
-          </ToggleButton>
-          <Button Command="{Binding ToggleMiniCommand}" Margin="0" Padding="9,7" ToolTip.Tip="Mini mode: a small always-on-top list of live sessions"
-                  AutomationProperties.Name="Mini mode">
-            <PathIcon Data="{StaticResource Icon.Mini}" />
           </Button>
-          <ListBox Classes="segmented" ItemsSource="{Binding Pages}" SelectedIndex="{Binding PageIndex}" Margin="0" AutomationProperties.Name="Pages" />
-        </StackPanel>
-      </Grid>
+          <Border x:Name="DragArea" Background="Transparent" />
+        </DockPanel>
+      </Border>
 
       <!-- ===== body ===== -->
-      <Grid Grid.Row="1" ColumnDefinitions="320,*">
-        <Border Background="{DynamicResource BgSide}" BorderBrush="{DynamicResource LineSoft}" BorderThickness="0,1,1,0" CornerRadius="0,16,0,0">
+      <Grid Grid.Row="1" ColumnDefinitions="248,*">
+        <Border Background="{DynamicResource BgSide}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0">
           <DockPanel>
-            <TextBlock DockPanel.Dock="Top" Text="SESSIONS" Classes="label" Margin="20,16,0,6" />
-            <ListBox Classes="sessions" ItemsSource="{Binding Sessions}" SelectedItem="{Binding SelectedItem}" AutomationProperties.Name="Sessions">
+            <ListBox DockPanel.Dock="Top" Classes="nav" ItemsSource="{Binding Nav}" SelectedIndex="{Binding PageIndex}" AutomationProperties.Name="Views">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:NavItemVM">
+                  <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding Shortcut}" FontSize="11.5" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                  </DockPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <DockPanel DockPanel.Dock="Top" Margin="16,10,8,4">
+              <Button DockPanel.Dock="Right" Classes="flat" Command="{Binding OpenNewCommand}" Padding="6,2" MinHeight="24"
+                      ToolTip.Tip="New session (Ctrl+N)" AutomationProperties.Name="New session">
+                <PathIcon Data="{StaticResource Icon.Plus}" Width="11" Height="11" />
+              </Button>
+              <TextBlock Text="SESSIONS" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
+            </DockPanel>
+            <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="12,4">
+              <CheckBox IsChecked="{Binding HideDone}" Content="Hide done sessions everywhere" FontSize="12" />
+            </Border>
+            <TextBlock DockPanel.Dock="Top" IsVisible="{Binding NoVisibleSessions}" Classes="faint wrap" Margin="16,4,16,0"
+                       Text="No Claude Code sessions yet. Start one in a terminal or with + and it shows up here." />
+            <ListBox x:Name="SessionsList" Classes="sessions" ItemsSource="{Binding VisibleSessions}" SelectedItem="{Binding SelectedItem}" AutomationProperties.Name="Sessions">
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="vm:SessionItemVM">
-                  <Grid ColumnDefinitions="44,*" ToolTip.Tip="{Binding Tooltip}">
-                    <Panel Width="34" Height="34" HorizontalAlignment="Left" VerticalAlignment="Center">
-                      <Border CornerRadius="10" Background="{Binding AvatarBg}">
-                        <TextBlock Text="{Binding Initial}" Foreground="{Binding AvatarBrush}" FontWeight="Bold" FontSize="14"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
-                      </Border>
-                      <Border Width="13" Height="13" CornerRadius="7" Background="{DynamicResource BgSide}" IsVisible="{Binding ShowDot}"
-                              HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-3,-3">
-                        <Ellipse Width="8" Height="8" Fill="{Binding StateBrush}" Classes.pulse="{Binding IsWorking}" />
-                      </Border>
-                    </Panel>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" Classes="trim" />
-                      <TextBlock Text="{Binding Subtitle}" Classes="faint trim" Margin="0,3,0,0" />
+                  <Grid ColumnDefinitions="16,*,Auto" RowDefinitions="Auto,Auto" ToolTip.Tip="{Binding Tooltip}">
+                    <Ellipse Width="8" Height="8" Fill="{Binding StateBrush}" Classes.pulse="{Binding NeedsYou}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding Title}" Classes="trim" FontSize="13" />
+                    <TextBlock Grid.Column="2" Text="{Binding Age}" FontSize="11" Foreground="{DynamicResource Muted}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                    <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="4" Margin="0,1,0,0">
+                      <TextBlock Text="{Binding StateText}" FontSize="11.5" Foreground="{Binding StateInk}" />
+                      <TextBlock Text="·" FontSize="11.5" Foreground="{DynamicResource Muted}" />
+                      <TextBlock Text="{Binding Project}" FontSize="11.5" Foreground="{DynamicResource Muted}" Classes="trim" MaxWidth="150" />
                     </StackPanel>
                   </Grid>
                 </DataTemplate>
@@ -73,62 +131,221 @@
           </DockPanel>
         </Border>
 
-        <Panel Grid.Column="1">
-          <Panel IsVisible="{Binding IsSessionPage}">
-            <TextBlock IsVisible="{Binding NoSession}" Text="No Claude Code sessions found yet. Start one and it shows up here." Classes="muted" Margin="30" />
-            <Panel IsVisible="{Binding !NoSession}"><views:SessionView DataContext="{Binding Detail}" /></Panel>
+        <Grid Grid.Column="1" RowDefinitions="44,*">
+          <!-- toolbar -->
+          <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="16,0,10,0">
+            <DockPanel>
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Button Command="{Binding OpenPaletteCommand}" Margin="0" MinWidth="230" HorizontalContentAlignment="Stretch" Background="{DynamicResource BgInput}"
+                        AutomationProperties.Name="Search or run a command">
+                  <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="Ctrl+K" FontSize="11" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
+                    <PathIcon DockPanel.Dock="Left" Data="{StaticResource Icon.Search}" Width="12" Height="12" Foreground="{DynamicResource Muted}" Margin="0,0,8,0" />
+                    <TextBlock Text="Search or run a command" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
+                  </DockPanel>
+                </Button>
+                <ToggleButton IsChecked="{Binding Redact}" Margin="0" ToolTip.Tip="Hide titles, prompts, commands, paths and project names (Ctrl+Shift+H)">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <PathIcon Data="{StaticResource Icon.EyeOff}" Width="13" Height="13" />
+                    <TextBlock Text="Hide private info" VerticalAlignment="Center" />
+                  </StackPanel>
+                </ToggleButton>
+                <Button Command="{Binding ToggleMiniCommand}" Margin="0" ToolTip.Tip="Mini window: always on top, answer from it (Ctrl+M)" AutomationProperties.Name="Mini window">
+                  <PathIcon Data="{StaticResource Icon.Mini}" Width="13" Height="13" />
+                </Button>
+                <ToggleButton IsChecked="{Binding IsDark}" Margin="0" ToolTip.Tip="Dark theme (Ctrl+Shift+D)" AutomationProperties.Name="Dark theme">
+                  <PathIcon Data="{StaticResource Icon.Moon}" Width="13" Height="13" />
+                </ToggleButton>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock Text="{Binding ViewTitle}" Classes="h1" MaxWidth="560" />
+                <TextBlock Text="{Binding ViewSub}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Classes="trim" MaxWidth="420" />
+              </StackPanel>
+            </DockPanel>
+          </Border>
+
+          <Panel Grid.Row="1">
+            <Panel IsVisible="{Binding IsOverviewPage}"><views:OverviewView /></Panel>
+            <Panel IsVisible="{Binding IsSessionPage}">
+              <TextBlock IsVisible="{Binding NoSession}" Text="No Claude Code sessions found yet. Start one and it shows up here." Classes="muted" Margin="24" />
+              <Panel IsVisible="{Binding !NoSession}"><views:SessionView DataContext="{Binding Detail}" /></Panel>
+            </Panel>
+            <Panel IsVisible="{Binding IsReportsPage}"><views:ReportsView DataContext="{Binding Reports}" /></Panel>
+            <Panel IsVisible="{Binding IsSearchPage}"><views:SearchView DataContext="{Binding Search}" /></Panel>
+            <Panel IsVisible="{Binding IsSettingsPage}"><views:SettingsView /></Panel>
+            <ScrollViewer IsVisible="{Binding IsExtensionsPage}">
+              <ItemsControl ItemsSource="{Binding Extensions}" Margin="12">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="ext:ExtensionVM">
+                    <Border Classes="card">
+                      <StackPanel>
+                        <TextBlock Text="{Binding Name}" Classes="title" Margin="0,0,0,10" />
+                        <ContentControl Content="{Binding View}" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
           </Panel>
-          <Panel IsVisible="{Binding IsOverviewPage}"><views:OverviewView DataContext="{Binding Overview}" /></Panel>
-          <Panel IsVisible="{Binding IsReportsPage}"><views:ReportsView DataContext="{Binding Reports}" /></Panel>
-          <Panel IsVisible="{Binding IsSearchPage}"><views:SearchView DataContext="{Binding Search}" /></Panel>
-          <Panel IsVisible="{Binding IsControlPage}"><views:ControlView DataContext="{Binding Control}" /></Panel>
-          <Panel IsVisible="{Binding IsConfigurePage}"><views:ConfigureView DataContext="{Binding Configure}" /></Panel>
-          <ScrollViewer IsVisible="{Binding IsExtensionsPage}">
-            <ItemsControl ItemsSource="{Binding Extensions}" Margin="23,24">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="ext:ExtensionVM">
-                  <Border Classes="card">
-                    <StackPanel>
-                      <TextBlock Text="{Binding Name}" Classes="title" Margin="0,0,0,12" />
-                      <ContentControl Content="{Binding View}" />
-                    </StackPanel>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </ScrollViewer>
-        </Panel>
+        </Grid>
       </Grid>
+
+      <!-- ===== status bar ===== -->
+      <Border Grid.Row="2" Background="{DynamicResource BgSide}" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="12,0">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Right" Text="{Binding PlanText}" FontSize="11.5" Foreground="{DynamicResource Fg2}" VerticalAlignment="Center" />
+          <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Ellipse Width="7" Height="7" Fill="{Binding LiveBrush}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding LiveText}" FontSize="11.5" Foreground="{DynamicResource Fg2}" />
+            </StackPanel>
+            <TextBlock Text="{Binding AnsweringText}" FontSize="11.5" Foreground="{DynamicResource Fg2}" />
+            <TextBlock Text="{Binding DefaultsText}" FontSize="11.5" Foreground="{DynamicResource Fg2}" Classes="trim" MaxWidth="520" />
+          </StackPanel>
+        </DockPanel>
+      </Border>
     </Grid>
 
-    <!-- ===== toasts ===== -->
-    <ItemsControl ItemsSource="{Binding Toasts}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="400" Margin="0,0,24,20">
+    <!-- ===== "waiting for you" (the bell) ===== -->
+    <Popup IsOpen="{Binding BellOpen}" PlacementTarget="{Binding #BellButton}" Placement="BottomEdgeAlignedRight" IsLightDismissEnabled="True"
+           Closed="OnBellClosed">
+      <Border Width="400" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="6" BoxShadow="0 10 28 0 #38000000">
+        <StackPanel>
+          <Border Classes="section" Padding="12,9"><TextBlock Text="Waiting for you" Classes="h2" /></Border>
+          <ItemsControl ItemsSource="{Binding Pending}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:PendingVM">
+                <Border BorderBrush="{DynamicResource LineSoft}" BorderThickness="0,0,0,1" Padding="12,10">
+                  <StackPanel Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Ellipse Width="8" Height="8" Fill="{DynamicResource Accent}" Classes="pulse" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Classes="trim" MaxWidth="200" />
+                      <TextBlock Text="{Binding Ask}" Foreground="{DynamicResource Muted}" FontSize="12" Classes="trim" />
+                    </StackPanel>
+                    <Border Classes="code"><TextBlock Text="{Binding Detail}" Classes="trim" /></Border>
+                    <StackPanel Orientation="Horizontal">
+                      <Button Classes="primary" Content="Allow once" Command="{ReflectionBinding $parent[Window].DataContext.AllowOnceCommand}" CommandParameter="{Binding}" />
+                      <Button Content="Deny…" Command="{ReflectionBinding $parent[Window].DataContext.DenyWithNoteCommand}" CommandParameter="{Binding}" />
+                      <Button Classes="link" Content="Details" Command="{ReflectionBinding $parent[Window].DataContext.OpenPendingCommand}" CommandParameter="{Binding}" />
+                      <TextBlock Text="{Binding AskedAgo, StringFormat='asked {0} ago'}" Classes="faint" VerticalAlignment="Center" Margin="4,0,0,6" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock IsVisible="{Binding !HasNeeds}" Text="Nothing is waiting for you." Classes="muted" Margin="12,12" />
+          <TextBlock Text="{Binding BellNote}" IsVisible="{Binding BellNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Classes="faint wrap" Margin="12,10" />
+        </StackPanel>
+      </Border>
+    </Popup>
+
+    <!-- ===== messages: top right, under the toolbar ===== -->
+    <ItemsControl ItemsSource="{Binding Toasts}" HorizontalAlignment="Right" VerticalAlignment="Top" Width="380" Margin="0,86,16,0">
       <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="vm:ToastVM">
-          <Button Classes="toast" Margin="0,8,0,0" Padding="0" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                  Command="{ReflectionBinding $parent[Window].DataContext.DismissToastCommand}" CommandParameter="{Binding}"
-                  ToolTip.Tip="Click to dismiss">
-            <Border Background="{DynamicResource BgCard}" BorderBrush="{Binding Brush}" BorderThickness="1" CornerRadius="12" Padding="14,10,14,11"
-                    BoxShadow="0 6 24 0 #66000000">
-              <DockPanel>
-                <PathIcon DockPanel.Dock="Left" Data="{Binding Icon}" Foreground="{Binding Brush}" Margin="0,1,10,0" VerticalAlignment="Top" />
-                <TextBlock Text="{Binding Message}" Classes="wrap" FontSize="12.5" FontWeight="Normal" />
-              </DockPanel>
-            </Border>
-          </Button>
+          <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="6" Padding="12,9" Margin="0,0,0,8"
+                  BoxShadow="0 8 24 0 #2E000000">
+            <DockPanel>
+              <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Fill="{Binding Brush}" VerticalAlignment="Top" Margin="0,5,10,0" />
+              <Button DockPanel.Dock="Right" Classes="flat link" Command="{ReflectionBinding $parent[Window].DataContext.DismissToastCommand}" CommandParameter="{Binding}"
+                      VerticalAlignment="Top" AutomationProperties.Name="Dismiss" Padding="4,2">
+                <PathIcon Data="{StaticResource Icon.Close}" Width="9" Height="9" />
+              </Button>
+              <Button DockPanel.Dock="Right" IsVisible="{Binding HasUndo}" Content="{Binding UndoLabel}" FontWeight="SemiBold" VerticalAlignment="Top" Margin="8,0,4,0"
+                      Command="{ReflectionBinding $parent[Window].DataContext.UndoToastCommand}" CommandParameter="{Binding}" />
+              <TextBlock Text="{Binding Message}" Classes="wrap" FontSize="12.5" />
+            </DockPanel>
+          </Border>
         </DataTemplate>
       </ItemsControl.ItemTemplate>
     </ItemsControl>
 
-    <!-- ===== confirmation dialog ===== -->
-    <Border IsVisible="{Binding ConfirmVisible}" Background="#99000000">
-      <Border Classes="card" Width="480" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24,22" BoxShadow="0 12 40 0 #88000000">
-        <StackPanel Spacing="18">
-          <TextBlock Text="{Binding ConfirmText}" Classes="wrap" FontSize="13.5" LineHeight="20" />
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Cancel" Command="{Binding ConfirmCancelCommand}" IsCancel="True" />
-            <Button Classes="primary" Content="{Binding ConfirmYes}" Command="{Binding ConfirmAcceptCommand}" IsDefault="True" Margin="0" />
+    <!-- ===== command palette (Ctrl+K) ===== -->
+    <Border IsVisible="{Binding PaletteOpen}" Background="{DynamicResource Overlay}" PointerPressed="OnOverlayPressed" Tag="palette">
+      <Border Width="580" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,80,0,0" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Line}"
+              BorderThickness="1" CornerRadius="8" BoxShadow="0 24 60 0 #59000000" PointerPressed="OnDialogPressed">
+        <DockPanel>
+          <Border DockPanel.Dock="Top" Classes="section" Padding="10,6">
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Content="Esc" FontSize="11" Margin="0" MinHeight="22" Padding="6,1" Command="{Binding EscapeCommand}" />
+              <PathIcon DockPanel.Dock="Left" Data="{StaticResource Icon.Search}" Width="13" Height="13" Foreground="{DynamicResource Muted}" Margin="2,0,8,0" />
+              <TextBox x:Name="PaletteBox" Text="{Binding PaletteQuery}" Watermark="Type a command, a session or words to search for…" BorderThickness="0" Background="Transparent"
+                       FontSize="14" AutomationProperties.Name="Search or run a command">
+                <TextBox.KeyBindings>
+                  <KeyBinding Gesture="Enter" Command="{Binding RunPaletteCommand}" CommandParameter="{x:Null}" />
+                  <KeyBinding Gesture="Down" Command="{Binding MovePaletteCommand}" CommandParameter="1" />
+                  <KeyBinding Gesture="Up" Command="{Binding MovePaletteCommand}" CommandParameter="-1" />
+                </TextBox.KeyBindings>
+              </TextBox>
+            </DockPanel>
+          </Border>
+          <ListBox ItemsSource="{Binding PaletteItems}" SelectedItem="{Binding PaletteSelected}" MaxHeight="380" Background="Transparent" Padding="4" Classes="nav"
+                   AutomationProperties.Name="Commands">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:PaletteItemVM">
+                <Button Classes="flat" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0" MinHeight="0" Background="Transparent"
+                        Command="{ReflectionBinding $parent[Window].DataContext.RunPaletteCommand}" CommandParameter="{Binding}">
+                  <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding Kind}" FontSize="11.5" Foreground="{DynamicResource Muted}" Margin="10,0,0,0" />
+                    <TextBlock Text="{Binding Label}" Classes="trim" />
+                  </DockPanel>
+                </Button>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+    </Border>
+
+    <!-- ===== new session ===== -->
+    <Border IsVisible="{Binding NewOpen}" Background="{DynamicResource Overlay}">
+      <Border Width="520" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Line}"
+              BorderThickness="1" CornerRadius="8" BoxShadow="0 24 60 0 #59000000">
+        <StackPanel>
+          <StackPanel Margin="18,16" Spacing="10">
+            <TextBlock Text="New session" FontSize="14" FontWeight="SemiBold" />
+            <TextBlock Text="Folder" Classes="h2" />
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseNewFolderCommand}" Margin="8,0,0,0" />
+              <ComboBox ItemsSource="{Binding RecentFolders}" SelectedItem="{Binding NewFolder}" Classes.private="{Binding Redact}" HorizontalAlignment="Stretch" FontFamily="{StaticResource MonoFont}"
+                        AutomationProperties.Name="Folder" />
+            </DockPanel>
+            <TextBlock Text="Start with" Classes="h2" />
+            <ListBox ItemsSource="{Binding StartOptions}" SelectedItem="{Binding StartPick}" Classes="nav" Padding="0" Background="Transparent" AutomationProperties.Name="Start with">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:StartOptionVM">
+                  <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding Flags}" Classes="mono" Foreground="{DynamicResource Muted}" Margin="12,0,0,0" MaxWidth="300" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Name}" />
+                  </DockPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
           </StackPanel>
+          <Border Background="{DynamicResource BgSide}" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8" Padding="18,10,12,4">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+              <Button Content="Cancel" Command="{Binding CloseNewCommand}" />
+              <Button Classes="primary" Content="Open in terminal" Command="{Binding StartNewCommand}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <!-- ===== confirmation ===== -->
+    <Border IsVisible="{Binding ConfirmVisible}" Background="{DynamicResource Overlay}">
+      <Border Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Line}"
+              BorderThickness="1" CornerRadius="8" BoxShadow="0 24 60 0 #59000000">
+        <StackPanel>
+          <TextBlock Text="{Binding ConfirmText}" Classes="wrap" FontSize="13" LineHeight="19" Margin="18,16" />
+          <Border Background="{DynamicResource BgSide}" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" CornerRadius="0,0,8,8" Padding="18,10,12,4">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+              <Button Content="Cancel" Command="{Binding ConfirmCancelCommand}" IsCancel="True" />
+              <Button Classes="primary" Content="{Binding ConfirmYes}" Command="{Binding ConfirmAcceptCommand}" IsDefault="True" />
+            </StackPanel>
+          </Border>
         </StackPanel>
       </Border>
     </Border>

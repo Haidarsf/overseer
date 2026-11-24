@@ -16,7 +16,7 @@ public static class Program
     {
         if (args.Length > 0)
         {
-            if (args[0] is "hook" or "statusline")
+            if (args[0] is "hook" or "statusline" or "permission")
             {
                 // Claude Code talks UTF-8 on stdin/stdout; Windows consoles default to the OEM code page
                 var utf8 = new System.Text.UTF8Encoding(false);
@@ -26,14 +26,19 @@ public static class Program
             {
                 case "hook": return Integration.RunHook(Console.In);
                 case "statusline": return Integration.RunStatusLine(Console.In, Console.Out);
+                case "permission":
+                    // waits for an answer from the Overseer window (only while it runs), then prints Claude Code's decision JSON
+                    return PermissionBridge.RunHook(Console.In, Console.Out, TimeSpan.FromSeconds(Math.Clamp(OverseerConfig.Load().PermissionWaitSeconds, 10, 600)));
                 case "--version": Console.WriteLine("Overseer " + typeof(Program).Assembly.GetName().Version); return 0;
                 case "--remove-integration":
                     // used by the uninstaller: take out only the hooks and status line Overseer added
                     var h = Integration.AnyHookInstalled() ? Integration.UninstallHooks() : ActionResult.Good("No Overseer hooks installed.");
                     var s = Integration.UninstallStatusLine();
+                    var p = Integration.PermissionHookInstalled() ? Integration.UninstallPermissionHook() : ActionResult.Good("No permission hook installed.");
                     Console.WriteLine(h.Message);
                     Console.WriteLine(s.Message);
-                    return h.Ok && s.Ok ? 0 : 1;
+                    Console.WriteLine(p.Message);
+                    return h.Ok && s.Ok && p.Ok ? 0 : 1;
                 case "--demo":
                     // made-up sessions in a temp folder; your real ~/.claude is not read or changed
                     var (claude, home) = Demo.Create(Path.Combine(Path.GetTempPath(), "overseer-demo"));
