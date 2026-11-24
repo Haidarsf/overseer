@@ -50,6 +50,7 @@ public sealed partial class MainViewModel : ObservableObject, IOverseerHost, IDi
     public ReportsViewModel Reports { get; }
     public SearchViewModel Search { get; }
     public ControlViewModel Control { get; }
+    public UpdatesViewModel Updates { get; }
     public ConfigureViewModel Configure { get; }
     public ObservableCollection<ExtensionVM> Extensions { get; } = new();
 
@@ -127,6 +128,7 @@ public sealed partial class MainViewModel : ObservableObject, IOverseerHost, IDi
         Search = new SearchViewModel(this);
         Control = new ControlViewModel(this);
         Configure = new ConfigureViewModel(this);
+        Updates = new UpdatesViewModel(this);
         Pending.CollectionChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(HasPendingRequests)); OnPropertyChanged(nameof(NoPendingRequests)); OnPropertyChanged(nameof(PendingCount));
@@ -152,6 +154,7 @@ public sealed partial class MainViewModel : ObservableObject, IOverseerHost, IDi
         clock = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         clock.Tick += (_, _) => { foreach (var p in Pending) p.Tick(); };
         clock.Start();
+        DispatcherTimer.RunOnce(() => _ = Updates.CheckIfDue(), TimeSpan.FromSeconds(20));
         try
         {
             pendingWatcher = new FileSystemWatcher(PermissionBridge.PendingDir, "*.json") { EnableRaisingEvents = true };
@@ -255,6 +258,10 @@ public sealed partial class MainViewModel : ObservableObject, IOverseerHost, IDi
     partial void OnIsDarkChanged(bool value) { if (!syncingTheme) SetTheme(value ? "dark" : "light"); }
     void SyncDark() { syncingTheme = true; IsDark = Application.Current?.ActualThemeVariant == ThemeVariant.Dark; syncingTheme = false; }
     [RelayCommand] void GoPrivacy() { Control.Tab = 8; Go("4"); }
+    [RelayCommand] public void GoUpdates() { Control.Tab = 10; Go("4"); }
+    [RelayCommand] void CheckForUpdates() { GoUpdates(); Updates.CheckNowCommand.Execute(null); }
+    /// <summary>The installer is running: close for real (not to the tray) so it can replace the files.</summary>
+    public void QuitForUpdate() => QuitRequested?.Invoke();
     [RelayCommand] void OpenGitHub() => ProcessControl.Open("https://github.com/Haidarsf/overseer");
     [RelayCommand]
     void ShowShortcuts() => Toast("Ctrl+K search and commands · Ctrl+N new session · Ctrl+1–4 views · Ctrl+, settings · Ctrl+M mini window · " +
@@ -571,6 +578,7 @@ public sealed partial class MainViewModel : ObservableObject, IOverseerHost, IDi
         items.Add(new(IsDark ? "Switch to the light theme" : "Switch to the dark theme", "view", () => { PaletteOpen = false; ToggleDark(); }));
         items.Add(new(Redact ? "Show private info" : "Hide private info", "privacy", () => { PaletteOpen = false; ToggleRedact(); }));
         items.Add(new(HideDone ? "Show done sessions" : "Hide done sessions", "view", () => { PaletteOpen = false; ToggleHideDone(); }));
+        items.Add(new("Check for updates", "overseer", () => { PaletteOpen = false; CheckForUpdates(); }));
         foreach (var s in Sessions.Take(30))
             items.Add(new("Open: " + s.Title, s.StateText.ToLowerInvariant(), () => { PaletteOpen = false; SelectSession(s.FilePath); }));
 

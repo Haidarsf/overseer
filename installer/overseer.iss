@@ -62,12 +62,25 @@ Name: "{userstartup}\Overseer"; Filename: "{app}\Overseer.exe"; Tasks: startup
 
 [Run]
 Filename: "{app}\Overseer.exe"; Description: "Start Overseer"; Flags: nowait postinstall skipifsilent
+; after a quiet update started from Overseer (Settings > Updates), start it again
+Filename: "{app}\Overseer.exe"; Flags: nowait runasoriginaluser; Check: Relaunch
 
 [UninstallRun]
 ; remove only the hooks and status line Overseer added to Claude Code's settings.json
 Filename: "{app}\Overseer.exe"; Parameters: "--remove-integration"; Flags: runhidden waituntilterminated; RunOnceId: "RemoveIntegration"
 
 [Code]
+// Overseer passes /RELAUNCH when it runs this installer to update itself.
+function Relaunch: Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 1 to ParamCount do
+    if CompareText(ParamStr(I), '/RELAUNCH') = 0 then
+      Result := True;
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usPostUninstall then

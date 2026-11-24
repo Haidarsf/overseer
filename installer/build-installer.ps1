@@ -44,6 +44,17 @@ $printed = (Get-Content $outFile -Raw).Trim()
 Write-Host "Installed app says: $printed"
 if ($v.ExitCode -ne 0 -or $printed -notlike "Overseer $Version*") { throw "Unexpected --version output: $printed" }
 
+Write-Host "Testing an in-app update (same arguments as Updater.InstallerStart)"
+$log = Join-Path $env:TEMP 'overseer-update-test.log'
+Remove-Item $log -ErrorAction SilentlyContinue
+$p = Start-Process $setup -ArgumentList '/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS', '/RELAUNCH', '/CURRENTUSER', "/LOG=$log" -Wait -PassThru
+if ($p.ExitCode -ne 0) { throw "Update install exited with $($p.ExitCode)" }
+$text = Get-Content $log -Raw
+if ($text -notmatch '-- Run entry --[\s\S]*?Filename: .*Overseer\.exe') { throw "The update install didn't start Overseer again (no run entry in $log)" }
+Write-Host "Update install restarted Overseer"
+Get-Process Overseer -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep 1
+
 Write-Host "Testing uninstall"
 $uninstaller = Join-Path $env:LOCALAPPDATA 'Programs\Overseer\unins000.exe'
 $u = Start-Process $uninstaller -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait -PassThru

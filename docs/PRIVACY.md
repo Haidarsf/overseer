@@ -34,7 +34,9 @@ It **never** reads `~/.claude/.credentials.json`, keychains, API keys or tokens.
 
 ## What it sends
 
-Nothing. Overseer has no telemetry, analytics, crash reporting or update checks, and makes no network requests of its own.
+Nothing about you. Overseer has no telemetry, analytics or crash reporting.
+
+The one request it makes itself is the **update check** (Settings → Updates, or Help → Check for updates). It asks GitHub for the latest release of Overseer (`api.github.com/repos/Haidarsf/overseer/releases/latest`) and sends nothing but that request: GitHub sees your IP address and an `Overseer-updater/<version>` user agent, as with any web request. It happens only when you click the button, or once a day at startup if you turn on **Check once a day** (off by default). If you choose **Download and install**, the installer is downloaded from the same GitHub release and checked against its SHA-256 checksum before it runs; a file that doesn't match is deleted.
 
 Some actions run the official `claude` command, which may use the network: listing or installing plugins, and checking, adding or removing MCP servers. They only run when you click them.
 

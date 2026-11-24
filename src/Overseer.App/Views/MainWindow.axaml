@@ -69,6 +69,7 @@
             <MenuItem Header="_Help">
               <MenuItem Header="Keyboard shortcuts" InputGesture="Ctrl+OemQuestion" Command="{Binding ShowShortcutsCommand}" />
               <MenuItem Header="What Overseer reads and writes" Command="{Binding GoPrivacyCommand}" />
+              <MenuItem Header="Check for updates…" Command="{Binding CheckForUpdatesCommand}" />
               <MenuItem Header="Overseer on GitHub" Command="{Binding OpenGitHubCommand}" />
             </MenuItem>
           </Menu>

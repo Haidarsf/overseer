@@ -389,7 +389,7 @@
       <ScrollViewer>
         <StackPanel Classes="page">
           <TextBlock Text="Privacy and backups" Classes="pageTitle" />
-          <TextBlock Classes="wrap" Text="Overseer runs only on this computer. It reads your Claude Code folder (~/.claude) but never your credentials, and sends nothing anywhere: no telemetry, no account." />
+          <TextBlock Classes="wrap" Text="Overseer runs only on this computer. It reads your Claude Code folder (~/.claude) but never your credentials, and sends nothing anywhere: no telemetry, no account. The one exception is checking for updates (Settings → Updates), which asks GitHub for the latest version number." />
           <TextBlock Classes="wrap" Text="It writes only when you change something here: ~/.claude/settings.json (with a backup made before its first change), and with live data on, small event and status files in ~/.overseer." />
           <Border Classes="row">
             <DockPanel>
@@ -412,6 +412,52 @@
     <!-- 9 -->
     <TabItem Header="Rules, hooks and files">
       <views:ConfigureView DataContext="{Binding Configure}" />
+    </TabItem>
+
+    <!-- 10 -->
+    <TabItem Header="Updates">
+      <ScrollViewer DataContext="{Binding Updates}" x:DataType="vm:UpdatesViewModel">
+        <StackPanel Classes="page">
+          <TextBlock Text="Updates" Classes="pageTitle" />
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Check for updates" Command="{Binding CheckNowCommand}" IsEnabled="{Binding !IsBusy}" VerticalAlignment="Center" />
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Text="{Binding CurrentVersion}" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding LastChecked}" Classes="faint" />
+            </StackPanel>
+          </DockPanel>
+          <TextBlock Text="{Binding Status}" Classes="wrap" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+          <Border Classes="card" Padding="14" IsVisible="{Binding HasUpdate}">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="h2" Margin="0">
+                <Run Text="Overseer " /><Run Text="{Binding NewVersion}" /><Run Text=" is available" />
+              </TextBlock>
+              <ScrollViewer MaxHeight="220" IsVisible="{Binding HasNotes}">
+                <TextBlock Text="{Binding Notes}" Classes="wrap muted" />
+              </ScrollViewer>
+              <ProgressBar Classes="bar" Value="{Binding Progress}" Maximum="100" Height="6" IsVisible="{Binding IsDownloading}" />
+              <WrapPanel>
+                <Button Classes="primary" Content="{Binding InstallLabel}" Command="{Binding InstallCommand}" IsEnabled="{Binding !IsBusy}" />
+                <Button Content="Cancel" Command="{Binding CancelCommand}" IsVisible="{Binding IsDownloading}" />
+                <Button Classes="link" Content="Read the full release notes" Command="{Binding OpenReleasesCommand}" />
+              </WrapPanel>
+            </StackPanel>
+          </Border>
+
+          <TextBlock Classes="faint wrap" Text="{Binding HowText}" />
+          <Border Classes="row">
+            <DockPanel>
+              <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding CheckDaily}" OnContent="" OffContent="" AutomationProperties.Name="Check for updates once a day" />
+              <StackPanel>
+                <TextBlock Text="Check once a day" FontWeight="SemiBold" />
+                <TextBlock Classes="faint wrap" Text="When Overseer starts, ask GitHub whether a newer version is out and tell you. It never installs anything without asking. The request goes only to GitHub and carries nothing about you or your sessions (GitHub sees your IP address, as with any web page)." />
+              </StackPanel>
+            </DockPanel>
+          </Border>
+          <Button Classes="link" Content="All releases on GitHub" Command="{Binding OpenReleasesCommand}" HorizontalAlignment="Left" />
+        </StackPanel>
+      </ScrollViewer>
     </TabItem>
   </TabControl>
 </UserControl>

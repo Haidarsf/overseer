@@ -69,6 +69,8 @@ Download the latest release from [Releases](https://github.com/Haidarsf/overseer
 
 Every build is self-contained, so nothing else is needed.
 
+**Updating:** Settings → Updates → **Check for updates** (also in the Help menu). If you installed with the Windows installer, **Download and install** fetches the new installer, verifies its SHA-256 checksum, installs it quietly and restarts Overseer. On macOS, Linux and the portable `.zip`, it opens the download page.
+
 - **Windows**: builds aren't code-signed yet, so SmartScreen may warn you. Choose *More info → Run anyway*, or build from source.
 - **macOS**: the app isn't notarized yet. After unpacking, run `xattr -dr com.apple.quarantine overseer-osx-*` or right-click → Open.
 - **Linux**: needs a desktop with a system tray for the tray icon; `notify-send` for notifications.
@@ -97,7 +99,7 @@ Turning a switch off removes exactly what Overseer added and nothing else. Claud
 
 ## Privacy and safety
 
-- **Local only.** Overseer makes no network requests of its own and has no telemetry. The only network activity comes from `claude plugin` and `claude mcp` commands you trigger.
+- **Local only.** Overseer has no telemetry. Its only network request of its own is the update check, which runs when you click it (or daily, if you turn that on). Other network activity comes from `claude plugin` and `claude mcp` commands you trigger.
 - **Never reads your credentials** (`~/.claude/.credentials.json`).
 - **Careful edits.** Every change goes through Claude Code's documented `settings.json` keys or the official `claude` CLI. The file is re-read before each change, other keys are kept, a backup (`settings.json.overseer-backup`) is written before the first change, and an invalid file is never overwritten.
 - **Confirmations** before stopping a session, installing or uninstalling plugins, adding or removing MCP servers, and removing rules or hooks. Deleted agents and commands go to `~/.overseer/trash`.

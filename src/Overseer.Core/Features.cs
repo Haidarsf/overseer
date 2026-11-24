@@ -45,6 +45,9 @@ public sealed class OverseerConfig
     /// <summary>Which plan window the usage dial shows: "5h" or "week".</summary>
     public string UsageWindow { get; set; } = "5h";
     public bool HideDone { get; set; }
+    /// <summary>Ask GitHub once a day whether a newer Overseer is out (off by default; the button in Settings always works).</summary>
+    public bool CheckForUpdates { get; set; }
+    public DateTimeOffset? LastUpdateCheck { get; set; }
     /// <summary>Load extension DLLs from ~/.overseer/plugins (off by default; they run with your permissions).</summary>
     public bool LoadExtensions { get; set; }
 
