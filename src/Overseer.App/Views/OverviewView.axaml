@@ -33,10 +33,12 @@
                             <Ellipse Width="8" Height="8" Fill="{Binding StateBrush}" Classes.pulse="{Binding NeedsYou}" VerticalAlignment="Center" />
                             <TextBlock Text="{Binding StateText}" FontSize="12.5" FontWeight="SemiBold" Foreground="{Binding StateInk}" />
                           </StackPanel>
-                          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,12,0">
-                            <TextBlock Text="{Binding Title}" Classes="trim" MaxWidth="320" />
-                            <TextBlock Text="{Binding Project}" FontSize="12" Foreground="{DynamicResource Muted}" Classes="trim" />
-                          </StackPanel>
+                          <!-- one text so it trims at the column edge: the folder name goes first, then the title -->
+                          <TextBlock Grid.Column="1" Classes="trim" VerticalAlignment="Center" Margin="0,0,12,0">
+                            <Run Text="{Binding Title}" />
+                            <Run Text="  " />
+                            <Run Text="{Binding Project}" FontSize="12" Foreground="{DynamicResource Muted}" />
+                          </TextBlock>
                           <TextBlock Grid.Column="2" Text="{Binding Note}" Foreground="{DynamicResource Fg2}" Classes="trim" VerticalAlignment="Center" Margin="0,0,12,0" />
                           <DockPanel Grid.Column="3" VerticalAlignment="Center" Margin="0,0,12,0">
                             <TextBlock DockPanel.Dock="Right" Text="{Binding ContextText}" Classes="mono" Width="34" TextAlignment="Right" />
