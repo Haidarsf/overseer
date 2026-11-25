@@ -189,6 +189,18 @@ public sealed partial class ReportsViewModel : ObservableObject
     [ObservableProperty] string totalCalls = "";
     [ObservableProperty] string totalCost = "";
     [ObservableProperty] string keyHeader = "Day";
+    [ObservableProperty] string historyNote = "";
+
+    /// <summary>Says where the data starts, so equal totals for 30 days, 90 days and All time make sense.</summary>
+    public static string NoteFor(DateTime? oldest, DateTime from)
+    {
+        if (oldest == null) return "";
+        var start = oldest.Value.ToLocalTime().ToString("d MMM yyyy", CultureInfo.CurrentCulture);
+        var covered = from > oldest.Value;
+        return covered
+            ? $"Your usage history starts on {start}. Overseer keeps it even after Claude Code deletes old conversations."
+            : $"Your usage history starts on {start}, so this range shows everything there is. Overseer keeps it from now on, even after Claude Code deletes conversations (after 30 days by default).";
+    }
 
     partial void OnRangeChanged(Option value) => Update();
     partial void OnGroupChanged(Option value) => Update();
@@ -199,8 +211,10 @@ public sealed partial class ReportsViewModel : ObservableObject
         var from = days == 0 ? DateTime.MinValue : DateTime.Now.Date.AddDays(-days + 1);
         var by = Group.Value switch { "project" => ReportGroup.Project, "model" => ReportGroup.Model, "session" => ReportGroup.Session, _ => ReportGroup.Day };
         KeyHeader = Group.Label.Replace("By ", "").ToUpperInvariant();
-        var names = main.Store.TopLevelById().ToDictionary(p => p.Key, p => p.Value.Title);
-        rows = Reports.Build(main.Store.AllUsage(), from, DateTime.Now.AddMinutes(1), by, main.Prices, id => names.GetValueOrDefault(id) ?? id);
+        var names = main.Store.SessionTitles();
+        var usage = main.Store.AllUsage();
+        HistoryNote = NoteFor(usage.Count == 0 ? null : usage.Min(u => u.Time), from);
+        rows = Reports.Build(usage, from, DateTime.Now.AddMinutes(1), by, main.Prices, id => names.GetValueOrDefault(id) ?? id);
         var mx = Math.Max(1, rows.Count == 0 ? 1 : rows.Max(r => r.Billable));
         Items = rows.Select(r => new ReportRowVM(
             by == ReportGroup.Project ? Redactor.Text(r.Key) : by == ReportGroup.Session ? Redactor.Text(r.Key) : r.Key,

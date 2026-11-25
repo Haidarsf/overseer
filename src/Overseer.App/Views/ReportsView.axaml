@@ -13,6 +13,7 @@
         <Button Command="{Binding EditPricesCommand}" Content="Edit prices" />
         <Button Command="{Binding ReloadPricesCommand}" Content="Reload prices" />
       </WrapPanel>
+      <TextBlock Text="{Binding HistoryNote}" IsVisible="{Binding HistoryNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Classes="muted wrap" Margin="0,2,0,4" />
 
       <UniformGrid Columns="3" Margin="-7,6,-7,0">
         <Border Classes="card"><StackPanel><TextBlock Text="Tokens" Classes="title" /><TextBlock Text="{Binding TotalTokens}" Classes="big" Margin="0,8,0,0" /><TextBlock Text="excl. cache reads" Classes="muted" /></StackPanel></Border>

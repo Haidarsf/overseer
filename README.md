@@ -32,7 +32,7 @@ When you run several Claude Code sessions, it's hard to tell which one is workin
 - **Plan usage**: your real 5-hour and weekly usage with reset times (from the status line), and which sessions used it
 - **Session log**, tools and MCP servers used, skills invoked, subagents, files changed, and the full conversation
 - **Activity**: new tokens per hour over the last day, plus the models, tools and skills of the last 7 days
-- **Reports** by day, project, model or session, with an API-equivalent cost estimate and CSV export
+- **Reports** by day, project, model or session, with an API-equivalent cost estimate and CSV export. Overseer keeps its own usage history, so reports still count conversations after Claude Code deletes them (after 30 days by default)
 - **Search** across every conversation on your machine
 
 **Steer**

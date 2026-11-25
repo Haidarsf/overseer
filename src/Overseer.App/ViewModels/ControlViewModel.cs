@@ -297,6 +297,15 @@ public sealed partial class ControlViewModel : ObservableObject
         Load();
     }
 
+    [RelayCommand]
+    async Task DeleteUsageHistory()
+    {
+        if (!await main.ConfirmAsync("Delete Overseer's usage history?\n\nReports will then only include conversations Claude Code still has. Usage from conversations it already deleted is gone for good.", "Delete")) return;
+        main.Store.ClearHistory();
+        main.Refresh();
+        main.Toast("Usage history deleted", true);
+    }
+
     // ---------- presets & launch ----------
     [RelayCommand]
     void ApplyPreset(PresetVM p) { Report(Core.Presets.ApplyAsDefault(p.Preset)); Load(); main.Refresh(); }

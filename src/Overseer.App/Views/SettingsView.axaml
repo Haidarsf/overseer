@@ -391,6 +391,7 @@
           <TextBlock Text="Privacy and backups" Classes="pageTitle" />
           <TextBlock Classes="wrap" Text="Overseer runs only on this computer. It reads your Claude Code folder (~/.claude) but never your credentials, and sends nothing anywhere: no telemetry, no account. The one exception is checking for updates (Settings → Updates), which asks GitHub for the latest version number." />
           <TextBlock Classes="wrap" Text="It writes only when you change something here: ~/.claude/settings.json (with a backup made before its first change), and with live data on, small event and status files in ~/.overseer." />
+          <TextBlock Classes="wrap" Text="For Reports, Overseer keeps a copy of your usage numbers in ~/.overseer/usage-history.json, so they stay after Claude Code deletes old conversations. It holds token counts, model names, project folders and session titles, never the conversations themselves." />
           <Border Classes="row">
             <DockPanel>
               <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding Redact}" OnContent="" OffContent="" AutomationProperties.Name="Hide private info" />
@@ -404,6 +405,7 @@
             <Button Content="Restore settings from backup…" Command="{Binding Control.RestoreBackupCommand}" />
             <Button Content="Open settings.json" Command="{Binding Control.OpenSettingsCommand}" />
             <Button Content="Open Overseer's folder" Command="{Binding Control.OpenOverseerFolderCommand}" />
+            <Button Content="Delete usage history…" Command="{Binding Control.DeleteUsageHistoryCommand}" />
           </WrapPanel>
         </StackPanel>
       </ScrollViewer>

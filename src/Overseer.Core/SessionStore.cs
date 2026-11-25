@@ -63,14 +63,47 @@ public sealed class SessionStore : IDisposable
 
     public Session? Find(string filePath) { lock (gate) return sessions.GetValueOrDefault(filePath); }
 
+    /// <summary>Every usage record: from the transcripts on disk, plus Overseer's history of transcripts Claude Code has deleted.</summary>
     public List<UsageRecord> AllUsage()
     {
-        lock (gate) return sessions.Values.SelectMany(s => s.Usages).Where(u => u.Time != DateTime.MinValue).ToList();
+        lock (gate)
+        {
+            var all = sessions.Values.SelectMany(s => s.Usages);
+            if (history != null) all = all.Concat(history.Gone(sessions.Keys).SelectMany(e => e.Usages));
+            return all.Where(u => u.Time != DateTime.MinValue).ToList();
+        }
+    }
+
+    /// <summary>Session titles by id, including sessions only the usage history remembers.</summary>
+    public Dictionary<string, string> SessionTitles()
+    {
+        var d = TopLevelById().ToDictionary(p => p.Key, p => p.Value.Title, StringComparer.Ordinal);
+        lock (gate)
+            if (history != null)
+                foreach (var e in history.Gone(sessions.Keys).Where(e => !e.IsSubagent && e.Title != null)) d.TryAdd(e.Id, e.Title!);
+        return d;
+    }
+
+    /// <summary>When the oldest usage record is from (null when there's none).</summary>
+    public DateTime? OldestUsage()
+    {
+        var all = AllUsage();
+        return all.Count == 0 ? null : all.Min(u => u.Time);
+    }
+
+    UsageHistory? history;
+    public UsageHistory? History => history;
+
+    /// <summary>Deletes Overseer's usage history. Reports then only cover the transcripts on disk.</summary>
+    public void ClearHistory()
+    {
+        lock (gate) history?.Clear();
     }
 
     // ---------- lifecycle ----------
     public void Start(TimeSpan fallbackInterval)
     {
+        OpenHistory();
         LoadCache();
         Watch(Paths.ProjectsDir, "*.jsonl", true);
         Watch(Paths.LiveSessionsDir, "*.json", false);
@@ -420,10 +453,35 @@ public sealed class SessionStore : IDisposable
             var c = JsonSerializer.Deserialize<CacheFile>(File.ReadAllText(CachePath), CacheJson);
             if (c == null || c.Version != CacheVersion || c.ClaudeDir != Paths.ClaudeDir) return;
             lock (gate)
+            {
+                // the index may still hold transcripts deleted since the last run: save their usage first
+                history?.Update(c.Sessions);
                 foreach (var s in c.Sessions)
                     if (File.Exists(s.FilePath)) sessions[s.FilePath] = s;
+            }
         }
         catch { /* corrupt cache: rebuild from scratch */ }
+    }
+
+    /// <summary>Loads (or starts) the usage history. Called by <see cref="Start"/>; tests pass their own file.</summary>
+    public void OpenHistory(string? file = null)
+    {
+        lock (gate)
+        {
+            history = new UsageHistory(file ?? UsageHistory.DefaultFile());
+            history.Load();
+        }
+    }
+
+    /// <summary>Copies the current usage into the history and writes it if anything changed.</summary>
+    public void SaveHistory()
+    {
+        lock (gate)
+        {
+            if (history == null) return;
+            history.Update(sessions.Values);
+            history.Save();
+        }
     }
 
     public void SaveCache()
@@ -435,9 +493,10 @@ public sealed class SessionStore : IDisposable
             var tmp = CachePath + ".tmp";
             File.WriteAllText(tmp, JsonSerializer.Serialize(c, CacheJson));
             File.Move(tmp, CachePath, true);
-            lastCacheSave = DateTime.Now;
         }
         catch { }
+        lastCacheSave = DateTime.Now;
+        SaveHistory();
     }
 }
 
