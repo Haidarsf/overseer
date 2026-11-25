@@ -1,5 +1,5 @@
 # Builds and tests the Windows installer.
-#   pwsh installer/build-installer.ps1 -Version 0.3.2 [-SkipTest]
+#   pwsh installer/build-installer.ps1 -Version 0.3.3 [-SkipTest]
 # Needs the .NET 8 SDK and Inno Setup 6 (choco install innosetup, or winget install JRSoftware.InnoSetup).
 param(
     [string]$Version = "0.0.0",

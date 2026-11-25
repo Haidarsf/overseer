@@ -4,9 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-11-25
+
 ### Added
 - Usage history: Overseer keeps a copy of your token usage in `~/.overseer/usage-history.json`, so Reports and the usage dials still count conversations after Claude Code deletes them (after 30 days by default). It holds numbers, model names, project folders and session titles, never the conversations. Settings → Privacy and backups → Delete usage history removes it.
 - Reports says when your usage history starts, so equal totals for 30 days, 90 days and All time make sense.
+
+### Fixed
+- Long session titles and folder names in the Overview table ran into the "Doing now" column. They now end with "…" at the column edge.
 
 ## [0.3.2] - 2026-11-25
 
